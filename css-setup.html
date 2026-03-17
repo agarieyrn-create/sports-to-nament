@@ -1,0 +1,372 @@
+<style>
+/* Tournament Pro - セットアップ画面スタイル */
+
+.setup-container {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+/* ヘッダー */
+.setup-header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.setup-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.setup-header p {
+  opacity: 0.95;
+  font-size: 1.1rem;
+}
+
+/* プログレスバー */
+.progress-container {
+  background: white;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.5s ease;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.progress-step {
+  flex: 1;
+  text-align: center;
+  opacity: 0.4;
+  transition: var(--transition);
+}
+
+.progress-step.active {
+  opacity: 1;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  background: var(--color-border);
+  color: var(--color-text-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.5rem;
+  font-weight: 700;
+  transition: var(--transition);
+}
+
+.progress-step.active .step-number {
+  background: var(--color-primary);
+  color: white;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+}
+
+.progress-step.active .step-label {
+  color: var(--color-primary);
+}
+
+/* メインコンテンツ */
+.setup-main {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+.setup-step {
+  display: none;
+  animation: slideIn 0.5s ease;
+}
+
+.setup-step.active {
+  display: block;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--color-text);
+}
+
+/* チーム入力 */
+.team-inputs {
+  display: grid;
+  gap: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius);
+}
+
+.team-input-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.team-number {
+  font-weight: 600;
+  color: var(--color-text-light);
+  min-width: 30px;
+}
+
+/* 試合形式オプション */
+.format-options {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.format-option {
+  cursor: pointer;
+}
+
+.format-option input[type="radio"] {
+  display: none;
+}
+
+.format-card {
+  background: white;
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  transition: var(--transition);
+}
+
+.format-option input[type="radio"]:checked + .format-card {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.format-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.format-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text);
+}
+
+.format-card p {
+  color: var(--color-text-light);
+  margin-bottom: 1rem;
+}
+
+.format-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+}
+
+/* ハイブリッドオプション */
+.hybrid-options {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  margin-top: 2rem;
+}
+
+/* ステップアクション */
+.step-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+/* 確認画面 */
+.confirm-container,
+.complete-container {
+  background: white;
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.confirm-icon,
+.complete-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.confirm-title,
+.complete-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+.confirm-description,
+.complete-description {
+  color: var(--color-text-light);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.confirm-summary {
+  background: var(--color-background);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.summary-section {
+  margin-bottom: 1.5rem;
+}
+
+.summary-section:last-child {
+  margin-bottom: 0;
+}
+
+.summary-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-primary);
+}
+
+.summary-section p {
+  margin: 0.25rem 0;
+  color: var(--color-text);
+}
+
+.summary-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.summary-list li {
+  padding: 0.25rem 0;
+  color: var(--color-text-light);
+}
+
+/* 次のステップ */
+.next-steps {
+  background: var(--color-background);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.next-steps h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+.next-steps ul {
+  list-style: none;
+  padding: 0;
+}
+
+.next-steps li {
+  padding: 0.75rem 0;
+  font-size: 1.05rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.next-steps li:last-child {
+  border-bottom: none;
+}
+
+/* チェックボックスラベル */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .setup-header h1 {
+    font-size: 2rem;
+  }
+  
+  .setup-main {
+    padding: 0 1rem;
+  }
+  
+  .progress-steps {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .step-title {
+    font-size: 1.5rem;
+  }
+  
+  .format-card {
+    padding: 1.5rem;
+  }
+  
+  .step-actions {
+    flex-direction: column;
+  }
+  
+  .step-actions .btn {
+    width: 100%;
+  }
+  
+  .confirm-container,
+  .complete-container {
+    padding: 2rem 1rem;
+  }
+}
+</style>

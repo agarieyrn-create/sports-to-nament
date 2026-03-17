@@ -1,0 +1,368 @@
+<script>
+/**
+ * Tournament Pro - Google Apps Script API呼び出し
+ */
+
+/**
+ * すべてのデータを読み込み
+ */
+function loadAllData(callback) {
+  debugLog('すべてのデータを読み込み中...');
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('データ読み込み成功', response);
+      
+      if (response.settings && response.settings.success) {
+        globalData.settings = response.settings.data;
+      }
+      if (response.teams && response.teams.success) {
+        globalData.teams = response.teams.data;
+      }
+      if (response.matches && response.matches.success) {
+        globalData.matches = response.matches.data;
+      }
+      if (response.standings && response.standings.success) {
+        globalData.standings = response.standings.data;
+      }
+      if (response.tournament && response.tournament.success) {
+        globalData.tournament = response.tournament.data;
+      }
+      if (response.tasks && response.tasks.success) {
+        globalData.tasks = response.tasks.data;
+      }
+      
+      if (callback) callback(true);
+    })
+    .withFailureHandler(function(error) {
+      errorLog('データ読み込みエラー', error);
+      showError('データの読み込みに失敗しました');
+      if (callback) callback(false);
+    })
+    .getAllData();
+}
+
+/**
+ * 設定を保存
+ */
+function saveSettingsToServer(settings, callback) {
+  debugLog('設定を保存中...', settings);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('設定保存成功', response);
+      if (response.success) {
+        showSuccess('設定を保存しました');
+        if (callback) callback(true);
+      } else {
+        showError(response.error || '設定の保存に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('設定保存エラー', error);
+      showError('設定の保存に失敗しました');
+      if (callback) callback(false);
+    })
+    .updateTournamentSettings(settings);
+}
+
+/**
+ * チームを追加
+ */
+function addTeamToServer(team, callback) {
+  debugLog('チームを追加中...', team);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('チーム追加成功', response);
+      if (response.success) {
+        showSuccess('チームを追加しました');
+        if (callback) callback(true, response.teamId);
+      } else {
+        showError(response.error || 'チームの追加に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('チーム追加エラー', error);
+      showError('チームの追加に失敗しました');
+      if (callback) callback(false);
+    })
+    .addTeam(team);
+}
+
+/**
+ * チームを更新
+ */
+function updateTeamOnServer(team, callback) {
+  debugLog('チームを更新中...', team);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('チーム更新成功', response);
+      if (response.success) {
+        showSuccess('チームを更新しました');
+        if (callback) callback(true);
+      } else {
+        showError(response.error || 'チームの更新に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('チーム更新エラー', error);
+      showError('チームの更新に失敗しました');
+      if (callback) callback(false);
+    })
+    .updateTeam(team);
+}
+
+/**
+ * チームを削除
+ */
+function deleteTeamFromServer(teamId, callback) {
+  debugLog('チームを削除中...', teamId);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('チーム削除成功', response);
+      if (response.success) {
+        showSuccess('チームを削除しました');
+        if (callback) callback(true);
+      } else {
+        showError(response.error || 'チームの削除に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('チーム削除エラー', error);
+      showError('チームの削除に失敗しました');
+      if (callback) callback(false);
+    })
+    .deleteTeam(teamId);
+}
+
+/**
+ * 複数チームを一括追加
+ */
+function bulkAddTeamsToServer(teams, callback) {
+  debugLog('複数チームを追加中...', teams);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('一括追加成功', response);
+      if (response.success) {
+        showSuccess(response.message);
+        if (callback) callback(true);
+      } else {
+        showError(response.error || '一括追加に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('一括追加エラー', error);
+      showError('一括追加に失敗しました');
+      if (callback) callback(false);
+    })
+    .bulkAddTeams(teams);
+}
+
+/**
+ * 試合スコアを更新
+ */
+function updateMatchScoreOnServer(matchId, scores, callback) {
+  debugLog('スコアを更新中...', { matchId, scores });
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('スコア更新成功', response);
+      if (response.success) {
+        showSuccess('スコアを更新しました');
+        if (callback) callback(true);
+      } else {
+        showError(response.error || 'スコアの更新に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('スコア更新エラー', error);
+      showError('スコアの更新に失敗しました');
+      if (callback) callback(false);
+    })
+    .updateMatchScore(matchId, scores);
+}
+
+/**
+ * スケジュール自動生成
+ */
+function generateScheduleOnServer(options, callback) {
+  debugLog('スケジュールを生成中...', options);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('スケジュール生成成功', response);
+      if (response.success) {
+        showSuccess(response.message);
+        if (callback) callback(true);
+      } else {
+        showError(response.error || 'スケジュールの生成に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('スケジュール生成エラー', error);
+      showError('スケジュールの生成に失敗しました');
+      if (callback) callback(false);
+    })
+    .generateLeagueSchedule(options);
+}
+
+/**
+ * 審判自動割り当て
+ */
+function autoAssignRefereesOnServer(callback) {
+  debugLog('審判を自動割り当て中...');
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('審判割り当て成功', response);
+      if (response.success) {
+        showSuccess(response.message);
+        if (callback) callback(true);
+      } else {
+        showError(response.error || '審判の割り当てに失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('審判割り当てエラー', error);
+      showError('審判の割り当てに失敗しました');
+      if (callback) callback(false);
+    })
+    .autoAssignReferees();
+}
+
+/**
+ * トーナメント生成
+ */
+function generateTournamentOnServer(callback) {
+  debugLog('トーナメントを生成中...');
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('トーナメント生成成功', response);
+      if (response.success) {
+        showSuccess(response.message);
+        if (callback) callback(true);
+      } else {
+        showError(response.error || 'トーナメントの生成に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('トーナメント生成エラー', error);
+      showError('トーナメントの生成に失敗しました');
+      if (callback) callback(false);
+    })
+    .generateTournamentBracket();
+}
+
+/**
+ * タスクの状態を切り替え
+ */
+function toggleTaskStatusOnServer(taskNo, callback) {
+  debugLog('タスク状態を切り替え中...', taskNo);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('タスク状態切り替え成功', response);
+      if (response.success) {
+        if (callback) callback(true, response.newStatus);
+      } else {
+        showError(response.error || 'タスク状態の変更に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('タスク状態切り替えエラー', error);
+      showError('タスク状態の変更に失敗しました');
+      if (callback) callback(false);
+    })
+    .toggleTaskStatus(taskNo);
+}
+
+/**
+ * 大会要項データを保存
+ */
+function saveTournamentDocumentToServer(document, callback) {
+  debugLog('大会要項データを保存中...', document);
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('大会要項保存成功', response);
+      if (response.success) {
+        showSuccess('大会要項を保存しました');
+        if (callback) callback(true);
+      } else {
+        showError(response.error || '大会要項の保存に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('大会要項保存エラー', error);
+      showError('大会要項の保存に失敗しました');
+      if (callback) callback(false);
+    })
+    .updateTournamentDocument(document);
+}
+
+/**
+ * 大会要項データを読み込み
+ */
+function loadTournamentDocumentFromServer(callback) {
+  debugLog('大会要項データを読み込み中...');
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('大会要項読み込み成功', response);
+      if (response.success) {
+        globalData.document = response.data;
+        if (callback) callback(true, response.data);
+      } else {
+        showError(response.error || '大会要項の読み込みに失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('大会要項読み込みエラー', error);
+      showError('大会要項の読み込みに失敗しました');
+      if (callback) callback(false);
+    })
+    .getTournamentDocument();
+}
+
+/**
+ * スプレッドシート初期化
+ */
+function initializeSpreadsheetOnServer(callback) {
+  debugLog('スプレッドシートを初期化中...');
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      debugLog('スプレッドシート初期化成功', response);
+      if (response.success) {
+        showSuccess('スプレッドシートを初期化しました');
+        if (callback) callback(true);
+      } else {
+        showError(response.error || 'スプレッドシートの初期化に失敗しました');
+        if (callback) callback(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      errorLog('スプレッドシート初期化エラー', error);
+      showError('スプレッドシートの初期化に失敗しました');
+      if (callback) callback(false);
+    })
+    .initializeSpreadsheet();
+}
+</script>

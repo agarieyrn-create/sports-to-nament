@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 - Tournament Pro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* 左下固定：トップに戻るボタン */
+    .back-to-top {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      padding: 12px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .back-to-top:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    .data-loaded-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+
+    /* デバッグパネル */
+    .debug-panel {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      padding: 15px;
+      margin: 20px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+
+    .debug-panel h3 {
+      color: #856404;
+      margin-bottom: 10px;
+    }
+
+    .debug-item {
+      padding: 5px 0;
+      border-bottom: 1px solid #ffe69c;
+    }
+
+    .debug-item:last-child {
+      border-bottom: none;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: #f5f5f5;
+      border-bottom: 2px solid #ddd;
+      overflow-x: auto;
+    }
+
+    .nav-tab {
+      padding: 15px 25px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      font-size: 1em;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .nav-tab:hover {
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+    }
+
+    .nav-tab.active {
+      background: white;
+      color: #667eea;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-success {
+      background: #48bb78;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #38a169;
+    }
+
+    .btn-warning {
+      background: #ed8936;
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #dd6b20;
+    }
+
+    /* トーナメント表示 */
+    .tournament-container {
+      overflow-x: auto;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 12px;
+    }
+
+    .tournament-rounds {
+      display: flex;
+      gap: 40px;
+      min-width: max-content;
+    }
+
+    .round {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      min-width: 280px;
+    }
+
+    .round-title {
+      text-align: center;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+    }
+
+    .match-card {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 15px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .match-card.completed {
+      border-color: #48bb78;
+      background: #f0fff4;
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .match-number {
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .match-status {
+      font-size: 0.85em;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .match-status.completed {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 6px;
+      background: #f7fafc;
+    }
+
+    .team-row.winner {
+      background: #c6f6d5;
+      font-weight: bold;
+      color: #22543d;
+    }
+
+    .team-name {
+      flex: 1;
+    }
+
+    .team-sets {
+      font-weight: bold;
+      font-size: 1.2em;
+      color: #667eea;
+      margin: 0 10px;
+    }
+
+    .referee-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .referee-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .referee-input input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.85em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-score {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-score:hover {
+      background: #5568d3;
+    }
+
+    .btn-detail {
+      background: #ed8936;
+      color: white;
+    }
+
+    .btn-detail:hover {
+      background: #dd6b20;
+    }
+
+    /* モーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .set-input {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .set-header {
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .score-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .score-row label {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .score-row input {
+      width: 80px;
+      padding: 8px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 1em;
+      text-align: center;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .team-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .team-card {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      font-weight: 500;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-content {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e2e8f0;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .tournament-rounds {
+        gap: 20px;
+      }
+
+      .round {
+        min-width: 220px;
+      }
+
+      .container {
+        border-radius: 0;
+      }
+
+      body {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 左下固定：トップに戻る -->
+  <a href="javascript:void(0);" class="back-to-top" onclick="goToTop()">← トップに戻る</a>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p style="font-size: 1.1em; color: #667eea; font-weight: bold;">読み込み中...</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h1>🏐 管理画面 - Tournament Pro</h1>
+      <p>バレーボール大会管理システム（3セットマッチ対応）</p>
+      <div id="dataLoadedBadge" class="data-loaded-badge" style="display: none;">
+        ✅ スプレッドシートから読み込み済み
+      </div>
+    </div>
+
+    <!-- デバッグパネル -->
+    <div class="debug-panel" id="debugPanel">
+      <h3>🔍 デバッグ情報</h3>
+      <div id="debugContent">
+        <div class="debug-item">状態: 初期化中...</div>
+      </div>
+      <button class="btn btn-warning" onclick="manualReload()" style="margin-top: 10px;">🔄 手動でデータ再読み込み</button>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('settings')">⚙️ 大会設定</button>
+      <button class="nav-tab" onclick="switchTab('teams')">👥 チーム管理</button>
+      <button class="nav-tab" onclick="switchTab('tournament')">🏆 トーナメント</button>
+      <button class="nav-tab" onclick="switchTab('debug')">🔍 デバッグ</button>
+    </div>
+
+    <div class="content">
+      <!-- 大会設定タブ -->
+      <div id="settings" class="tab-content active">
+        <div class="section">
+          <h2>基本設定</h2>
+          <div class="settings-grid">
+            <div class="form-group">
+              <label>大会名</label>
+              <input type="text" id="tournamentName" placeholder="例: 春季バレーボール大会">
+            </div>
+            <div class="form-group">
+              <label>開催日</label>
+              <input type="date" id="tournamentDate">
+            </div>
+            <div class="form-group">
+              <label>会場名</label>
+              <input type="text" id="venueName" placeholder="例: 市民体育館">
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>バレーボールセット設定</h2>
+          <div class="settings-grid">
+            <div class="form-group">
+              <label>第1・2セット 勝利点数</label>
+              <input type="number" id="set12Points" value="25" min="15" max="50">
+              <small style="color: #666;">一般的に25点</small>
+            </div>
+            <div class="form-group">
+              <label>第3セット 勝利点数</label>
+              <input type="number" id="set3Points" value="15" min="10" max="30">
+              <small style="color: #666;">一般的に15点</small>
+            </div>
+            <div class="form-group">
+              <label>デュース差</label>
+              <input type="number" id="deuceMargin" value="2" min="1" max="5">
+              <small style="color: #666;">勝利に必要な点差</small>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveSettingsToSheet()">💾 設定を保存</button>
+        </div>
+      </div>
+
+      <!-- チーム管理タブ -->
+      <div id="teams" class="tab-content">
+        <div class="section">
+          <h2>チーム一覧</h2>
+          <div id="teamsList" class="team-list">
+            <p style="color: #666;">チーム情報を読み込み中...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- トーナメントタブ -->
+      <div id="tournament" class="tab-content">
+        <div class="section">
+          <h2>トーナメント表</h2>
+          <div style="margin-bottom: 20px;">
+            <button class="btn btn-primary" onclick="generateTournament()">🔄 トーナメント生成</button>
+            <button class="btn btn-success" onclick="autoAssignReferees()">👨‍⚖️ 審判を自動割り当て</button>
+          </div>
+          <div class="tournament-container" id="tournamentDisplay">
+            <p style="color: #666; text-align: center;">「トーナメント生成」ボタンをクリックしてください</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- デバッグタブ -->
+      <div id="debug" class="tab-content">
+        <div class="section">
+          <h2>詳細デバッグ情報</h2>
+          <div id="fullDebugInfo" style="background: #f7fafc; padding: 20px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; font-size: 0.85em;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- スコア入力モーダル -->
+  <div id="scoreModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">🏐 スコア入力（3セットマッチ）</div>
+      <div id="scoreInputForm"></div>
+      <div class="modal-buttons">
+        <button class="btn btn-primary" onclick="saveScore()">💾 保存</button>
+        <button class="btn" style="background: #cbd5e0; color: #2d3748;" onclick="closeModal()">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詳細表示モーダル -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">📊 試合詳細</div>
+      <div id="detailContent"></div>
+      <div class="modal-buttons">
+        <button class="btn btn-primary" onclick="closeDetailModal()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // グローバル変数
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbw13mhYCidwyvqC4AKGJ_N-R8ZFt5RZByjQQVdf6sjSgaQnNVhTvUQL3QAfqHfWATgS/exec';
+    
+    let tournamentData = {
+      settings: {
+        name: '',
+        date: '',
+        venue: '',
+        set12Points: 25,
+        set3Points: 15,
+        deuceMargin: 2
+      },
+      teams: [],
+      matches: []
+    };
+
+    let currentMatchId = null;
+    let debugLog = [];
+
+    // デバッグログ追加
+    function addDebugLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      debugLog.push({ timestamp, message, type });
+      console.log(`[${timestamp}] ${message}`);
+      updateDebugPanel();
+    }
+
+    // デバッグパネル更新
+    function updateDebugPanel() {
+      const debugContent = document.getElementById('debugContent');
+      debugContent.innerHTML = debugLog.slice(-10).map(log => {
+        const icon = log.type === 'error' ? '❌' : log.type === 'success' ? '✅' : 'ℹ️';
+        return `<div class="debug-item">${icon} [${log.timestamp}] ${log.message}</div>`;
+      }).join('');
+
+      document.getElementById('fullDebugInfo').textContent = JSON.stringify({
+        debugLog,
+        tournamentData,
+        hasGoogleScript: typeof google !== 'undefined' && typeof google.script !== 'undefined'
+      }, null, 2);
+    }
+
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+      addDebugLog('管理画面が読み込まれました', 'info');
+      addDebugLog('google.script 利用可能: ' + (typeof google !== 'undefined' && typeof google.script !== 'undefined'), 'info');
+      
+      if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+        addDebugLog('エラー: google.script が利用できません', 'error');
+        alert('エラー: Google Apps Script との接続に失敗しました。\n\nGASからデプロイされたURLでアクセスしているか確認してください。');
+      } else {
+        loadAllData();
+      }
+    });
+
+    // ローディング表示
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // 手動再読み込み
+    function manualReload() {
+      addDebugLog('手動再読み込みを開始', 'info');
+      loadAllData();
+    }
+
+    // 全データ読み込み
+    function loadAllData() {
+      addDebugLog('getAllData() を呼び出します', 'info');
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(onDataLoaded)
+        .withFailureHandler(onDataLoadFailed)
+        .getAllData();
+    }
+
+    // データ読み込み成功
+    function onDataLoaded(data) {
+      hideLoading();
+      addDebugLog('データ読み込み成功', 'success');
+      addDebugLog('受信データ: ' + JSON.stringify(data).substring(0, 200) + '...', 'info');
+      
+      if (data && data.settings) {
+        tournamentData.settings = data.settings;
+        tournamentData.teams = data.teams || [];
+        tournamentData.matches = data.matches || [];
+        
+        addDebugLog('大会名: ' + data.settings.name, 'success');
+        addDebugLog('チーム数: ' + (data.teams ? data.teams.length : 0), 'success');
+        addDebugLog('試合数: ' + (data.matches ? data.matches.length : 0), 'success');
+        
+        updateFormValues();
+        document.getElementById('dataLoadedBadge').style.display = 'inline-block';
+        
+        // トーナメントが既に生成されていれば表示
+        if (tournamentData.matches.length > 0) {
+          displayTournament();
+        }
+      } else {
+        addDebugLog('警告: データが空です', 'error');
+      }
+    }
+
+    // データ読み込み失敗
+    function onDataLoadFailed(error) {
+      hideLoading();
+      addDebugLog('データ読み込み失敗: ' + error.message, 'error');
+      alert('データの読み込みに失敗しました:\n\n' + error.message + '\n\nスプレッドシートのアクセス権限を確認してください。');
+    }
+
+    // フォームに値を設定
+    function updateFormValues() {
+      addDebugLog('フォームに値を設定中', 'info');
+      
+      document.getElementById('tournamentName').value = tournamentData.settings.name || '';
+      document.getElementById('tournamentDate').value = tournamentData.settings.date || '';
+      document.getElementById('venueName').value = tournamentData.settings.venue || '';
+      document.getElementById('set12Points').value = tournamentData.settings.set12Points || 25;
+      document.getElementById('set3Points').value = tournamentData.settings.set3Points || 15;
+      document.getElementById('deuceMargin').value = tournamentData.settings.deuceMargin || 2;
+      
+      addDebugLog('フォーム更新完了', 'success');
+    }
+
+    // トップへ戻る
+    function goToTop() {
+      window.top.location.href = BASE_URL;
+    }
+
+    // タブ切り替え
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+      
+      if (tabName === 'teams') {
+        loadTeams();
+      }
+    }
+
+    // 設定をスプレッドシートへ保存
+    function saveSettingsToSheet() {
+      tournamentData.settings = {
+        name: document.getElementById('tournamentName').value,
+        date: document.getElementById('tournamentDate').value,
+        venue: document.getElementById('venueName').value,
+        set12Points: parseInt(document.getElementById('set12Points').value),
+        set3Points: parseInt(document.getElementById('set3Points').value),
+        deuceMargin: parseInt(document.getElementById('deuceMargin').value)
+      };
+      
+      addDebugLog('設定保存を開始', 'info');
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          hideLoading();
+          addDebugLog('設定保存成功', 'success');
+          alert('✅ 設定を保存しました！');
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          addDebugLog('設定保存失敗: ' + error.message, 'error');
+          alert('❌ 保存に失敗しました: ' + error.message);
+        })
+        .saveSettings(tournamentData.settings);
+    }
+
+    // チーム一覧の読み込み
+    function loadTeams() {
+      const teamsList = document.getElementById('teamsList');
+      
+      addDebugLog('チーム一覧を表示: ' + tournamentData.teams.length + '件', 'info');
+      
+      if (tournamentData.teams.length === 0) {
+        teamsList.innerHTML = '<p style="color: #999;">チームが登録されていません</p>';
+        return;
+      }
+      
+      teamsList.innerHTML = tournamentData.teams.map(team => `
+        <div class="team-card">
+          <strong>${team.name}</strong>
+        </div>
+      `).join('');
+    }
+
+    // トーナメント生成
+    function generateTournament() {
+      if (tournamentData.teams.length < 8) {
+        alert('❌ 8チーム以上必要です');
+        return;
+      }
+
+      addDebugLog('トーナメント生成を開始', 'info');
+      tournamentData.matches = [];
+      
+      // 準々決勝 (4試合)
+      for (let i = 0; i < 4; i++) {
+        tournamentData.matches.push({
+          id: `qf${i + 1}`,
+          round: 'quarterfinal',
+          roundName: '準々決勝',
+          matchNumber: i + 1,
+          team1: tournamentData.teams[i * 2],
+          team2: tournamentData.teams[i * 2 + 1],
+          referee: null,
+          sets: [
+            { team1Score: null, team2Score: null },
+            { team1Score: null, team2Score: null },
+            { team1Score: null, team2Score: null }
+          ],
+          team1Sets: 0,
+          team2Sets: 0,
+          winner: null,
+          status: 'pending'
+        });
+      }
+      
+      // 準決勝 (2試合)
+      for (let i = 0; i < 2; i++) {
+        tournamentData.matches.push({
+          id: `sf${i + 1}`,
+          round: 'semifinal',
+          roundName: '準決勝',
+          matchNumber: i + 1,
+          team1: null,
+          team2: null,
+          referee: null,
+          sets: [
+            { team1Score: null, team2Score: null },
+            { team1Score: null, team2Score: null },
+            { team1Score: null, team2Score: null }
+          ],
+          team1Sets: 0,
+          team2Sets: 0,
+          winner: null,
+          status: 'pending'
+        });
+      }
+      
+      // 決勝 (1試合)
+      tournamentData.matches.push({
+        id: 'final',
+        round: 'final',
+        roundName: '決勝',
+        matchNumber: 1,
+        team1: null,
+        team2: null,
+        referee: null,
+        sets: [
+          { team1Score: null, team2Score: null },
+          { team1Score: null, team2Score: null },
+          { team1Score: null, team2Score: null }
+        ],
+        team1Sets: 0,
+        team2Sets: 0,
+        winner: null,
+        status: 'pending'
+      });
+      
+      addDebugLog('トーナメント生成完了: ' + tournamentData.matches.length + '試合', 'success');
+      
+      // スプレッドシートへ保存
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function() {
+          hideLoading();
+          displayTournament();
+          alert('✅ トーナメント表を生成しました！');
+          addDebugLog('トーナメントをスプレッドシートへ保存完了', 'success');
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          addDebugLog('トーナメント保存失敗: ' + error.message, 'error');
+          alert('❌ トーナメント保存に失敗: ' + error.message);
+        })
+        .saveMatches(tournamentData.matches);
+    }
+
+    // トーナメント表示
+    function displayTournament() {
+      const container = document.getElementById('tournamentDisplay');
+      const rounds = [
+        { key: 'quarterfinal', name: '準々決勝', matches: tournamentData.matches.filter(m => m.round === 'quarterfinal') },
+        { key: 'semifinal', name: '準決勝', matches: tournamentData.matches.filter(m => m.round === 'semifinal') },
+        { key: 'final', name: '決勝', matches: tournamentData.matches.filter(m => m.round === 'final') }
+      ];
+      
+      container.innerHTML = `
+        <div class="tournament-rounds">
+          ${rounds.map(round => `
+            <div class="round">
+              <div class="round-title">${round.name}</div>
+              ${round.matches.map(match => createMatchCard(match)).join('')}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // 試合カード生成
+    function createMatchCard(match) {
+      const team1Name = match.team1 ? match.team1.name : '未定';
+      const team2Name = match.team2 ? match.team2.name : '未定';
+      const isCompleted = match.status === 'completed';
+      const team1IsWinner = match.winner && match.winner.id === match.team1?.id;
+      const team2IsWinner = match.winner && match.winner.id === match.team2?.id;
+      
+      return `
+        <div class="match-card ${isCompleted ? 'completed' : ''}">
+          <div class="match-header">
+            <span class="match-number">試合 ${match.matchNumber}</span>
+            <span class="match-status ${isCompleted ? 'completed' : ''}">${isCompleted ? '完了' : '未開始'}</span>
+          </div>
+          
+          <div class="team-row ${team1IsWinner ? 'winner' : ''}">
+            <span class="team-name">${team1Name}</span>
+            <span class="team-sets">${match.team1Sets}</span>
+          </div>
+          
+          <div class="team-row ${team2IsWinner ? 'winner' : ''}">
+            <span class="team-name">${team2Name}</span>
+            <span class="team-sets">${match.team2Sets}</span>
+          </div>
+          
+          <div class="referee-section">
+            <strong>👨‍⚖️ 審判：</strong>
+            <div class="referee-input">
+              <input type="text" placeholder="審判チーム名を入力" value="${match.referee || ''}"
+                     onchange="updateReferee('${match.id}', this.value)">
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="btn-small btn-score" onclick="openScoreModal('${match.id}')">📝 スコア入力</button>
+            ${isCompleted ? `<button class="btn-small btn-detail" onclick="openDetailModal('${match.id}')">📊 詳細</button>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // 審判の更新
+    function updateReferee(matchId, refereeName) {
+      const match = tournamentData.matches.find(m => m.id === matchId);
+      if (match) {
+        match.referee = refereeName.trim() || null;
+        addDebugLog(`審判更新: ${matchId} → ${refereeName}`, 'info');
+      }
+    }
+
+    // 審判の自動割り当て
+    function autoAssignReferees() {
+      const qfMatches = tournamentData.matches.filter(m => m.round === 'quarterfinal');
+      qfMatches.forEach((match, index) => {
+        const availableTeams = tournamentData.teams.filter(team => 
+          team.id !== match.team1.id && team.id !== match.team2.id
+        );
+        if (availableTeams.length > 0) {
+          match.referee = availableTeams[index % availableTeams.length].name;
+        }
+      });
+      
+      displayTournament();
+      alert('✅ 審判を自動割り当てしました！（手動で変更も可能です）');
+      addDebugLog('審判自動割り当て完了', 'success');
+    }
+
+    // スコア入力モーダルを開く
+    function openScoreModal(matchId) {
+      currentMatchId = matchId;
+      const match = tournamentData.matches.find(m => m.id === matchId);
+      if (!match || !match.team1 || !match.team2) {
+        alert('❌ チームが確定していない試合です');
+        return;
+      }
+      
+      const form = document.getElementById('scoreInputForm');
+      form.innerHTML = `
+        <div class="set-input">
+          <div class="set-header">第1セット（${tournamentData.settings.set12Points}点先取）</div>
+          <div class="score-row">
+            <label>${match.team1.name}</label>
+            <input type="number" id="set1_team1" min="0" value="${match.sets[0].team1Score || ''}" placeholder="点数">
+          </div>
+          <div class="score-row">
+            <label>${match.team2.name}</label>
+            <input type="number" id="set1_team2" min="0" value="${match.sets[0].team2Score || ''}" placeholder="点数">
+          </div>
+        </div>
+        
+        <div class="set-input">
+          <div class="set-header">第2セット（${tournamentData.settings.set12Points}点先取）</div>
+          <div class="score-row">
+            <label>${match.team1.name}</label>
+            <input type="number" id="set2_team1" min="0" value="${match.sets[1].team1Score || ''}" placeholder="点数">
+          </div>
+          <div class="score-row">
+            <label>${match.team2.name}</label>
+            <input type="number" id="set2_team2" min="0" value="${match.sets[1].team2Score || ''}" placeholder="点数">
+          </div>
+        </div>
+        
+        <div class="set-input">
+          <div class="set-header">第3セット（${tournamentData.settings.set3Points}点先取）※必要時のみ</div>
+          <div class="score-row">
+            <label>${match.team1.name}</label>
+            <input type="number" id="set3_team1" min="0" value="${match.sets[2].team1Score || ''}" placeholder="点数">
+          </div>
+          <div class="score-row">
+            <label>${match.team2.name}</label>
+            <input type="number" id="set3_team2" min="0" value="${match.sets[2].team2Score || ''}" placeholder="点数">
+          </div>
+        </div>
+        
+        <p style="color: #666; font-size: 0.9em; margin-top: 15px;">
+          ※ ${tournamentData.settings.deuceMargin}点差以上で勝利<br>
+          ※ 2セット先取で試合終了
+        </p>
+      `;
+      
+      document.getElementById('scoreModal').classList.add('active');
+    }
+
+    // スコア保存
+    function saveScore() {
+      const match = tournamentData.matches.find(m => m.id === currentMatchId);
+      if (!match) return;
+      
+      // 各セットのスコアを取得
+      for (let i = 0; i < 3; i++) {
+        match.sets[i].team1Score = parseInt(document.getElementById(`set${i+1}_team1`).value) || null;
+        match.sets[i].team2Score = parseInt(document.getElementById(`set${i+1}_team2`).value) || null;
+      }
+      
+      // セット数をカウント
+      match.team1Sets = 0;
+      match.team2Sets = 0;
+      
+      const minPoints = [
+        tournamentData.settings.set12Points,
+        tournamentData.settings.set12Points,
+        tournamentData.settings.set3Points
+      ];
+      
+      for (let i = 0; i < 3; i++) {
+        const s1 = match.sets[i].team1Score;
+        const s2 = match.sets[i].team2Score;
+        
+        if (s1 !== null && s2 !== null) {
+          const diff = Math.abs(s1 - s2);
+          const maxScore = Math.max(s1, s2);
+          
+          if (maxScore >= minPoints[i] && diff >= tournamentData.settings.deuceMargin) {
+            if (s1 > s2) {
+              match.team1Sets++;
+            } else {
+              match.team2Sets++;
+            }
+          }
+        }
+      }
+      
+      // 勝者判定（2セット先取）
+      if (match.team1Sets >= 2) {
+        match.winner = match.team1;
+        match.status = 'completed';
+      } else if (match.team2Sets >= 2) {
+        match.winner = match.team2;
+        match.status = 'completed';
+      }
+      
+      // 次のラウンドへ進出
+      if (match.status === 'completed') {
+        advanceWinner(match);
+      }
+      
+      addDebugLog(`スコア保存: ${currentMatchId} - ${match.team1.name} ${match.team1Sets}-${match.team2Sets} ${match.team2.name}`, 'success');
+      
+      // スプレッドシートへ保存
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function() {
+          hideLoading();
+          closeModal();
+          displayTournament();
+          alert('✅ スコアを保存しました！');
+          addDebugLog('スコアをスプレッドシートへ保存完了', 'success');
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          addDebugLog('スコア保存失敗: ' + error.message, 'error');
+          alert('❌ スコア保存に失敗: ' + error.message);
+        })
+        .saveMatches(tournamentData.matches);
+    }
+
+    // 勝者を次のラウンドへ
+    function advanceWinner(match) {
+      if (!match.winner) return;
+      
+      if (match.round === 'quarterfinal') {
+        const sfIndex = Math.floor((match.matchNumber - 1) / 2);
+        const sfMatch = tournamentData.matches.find(m => m.round === 'semifinal' && m.matchNumber === sfIndex + 1);
+        if (sfMatch) {
+          if (match.matchNumber % 2 === 1) {
+            sfMatch.team1 = match.winner;
+          } else {
+            sfMatch.team2 = match.winner;
+          }
+        }
+      } else if (match.round === 'semifinal') {
+        const finalMatch = tournamentData.matches.find(m => m.round === 'final');
+        if (finalMatch) {
+          if (match.matchNumber === 1) {
+            finalMatch.team1 = match.winner;
+          } else {
+            finalMatch.team2 = match.winner;
+          }
+        }
+      }
+    }
+
+    // 詳細モーダルを開く
+    function openDetailModal(matchId) {
+      const match = tournamentData.matches.find(m => m.id === matchId);
+      if (!match) return;
+      
+      const content = document.getElementById('detailContent');
+      content.innerHTML = `
+        <h3 style="color: #667eea; margin-bottom: 15px;">${match.roundName} 試合${match.matchNumber}</h3>
+        
+        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+          <strong>👨‍⚖️ 審判：</strong> ${match.referee || '未設定'}
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+          <thead>
+            <tr style="background: #667eea; color: white;">
+              <th style="padding: 10px; text-align: left;">チーム</th>
+              <th style="padding: 10px; text-align: center;">第1セット</th>
+              <th style="padding: 10px; text-align: center;">第2セット</th>
+              <th style="padding: 10px; text-align: center;">第3セット</th>
+              <th style="padding: 10px; text-align: center;">取得セット</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: ${match.winner?.id === match.team1.id ? '#c6f6d5' : 'white'};">
+              <td style="padding: 10px; font-weight: bold;">${match.team1.name}</td>
+              <td style="padding: 10px; text-align: center;">${match.sets[0].team1Score ?? '-'}</td>
+              <td style="padding: 10px; text-align: center;">${match.sets[1].team1Score ?? '-'}</td>
+              <td style="padding: 10px; text-align: center;">${match.sets[2].team1Score ?? '-'}</td>
+              <td style="padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em;">${match.team1Sets}</td>
+            </tr>
+            <tr style="background: ${match.winner?.id === match.team2.id ? '#c6f6d5' : 'white'};">
+              <td style="padding: 10px; font-weight: bold;">${match.team2.name}</td>
+              <td style="padding: 10px; text-align: center;">${match.sets[0].team2Score ?? '-'}</td>
+              <td style="padding: 10px; text-align: center;">${match.sets[1].team2Score ?? '-'}</td>
+              <td style="padding: 10px; text-align: center;">${match.sets[2].team2Score ?? '-'}</td>
+              <td style="padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em;">${match.team2Sets}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        ${match.winner ? `
+          <div style="background: #c6f6d5; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
+            <strong style="color: #22543d; font-size: 1.2em;">🏆 勝者: ${match.winner.name}</strong>
+          </div>
+        ` : ''}
+      `;
+      
+      document.getElementById('detailModal').classList.add('active');
+    }
+
+    // モーダルを閉じる
+    function closeModal() {
+      document.getElementById('scoreModal').classList.remove('active');
+      currentMatchId = null;
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

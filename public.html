@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>観客画面 - Tournament Pro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .back-to-top {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      padding: 12px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .back-to-top:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .tournament-info {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1em;
+    }
+
+    .auto-refresh-notice {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 20px;
+      margin-top: 15px;
+      font-size: 0.9em;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      color: #667eea;
+      font-size: 2em;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .tournament-container {
+      overflow-x: auto;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 12px;
+    }
+
+    .tournament-rounds {
+      display: flex;
+      gap: 40px;
+      min-width: max-content;
+      justify-content: center;
+    }
+
+    .round {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      min-width: 300px;
+    }
+
+    .round-title {
+      text-align: center;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.3em;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .match-card {
+      background: white;
+      border: 3px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    .match-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .match-card.completed {
+      border-color: #48bb78;
+      background: linear-gradient(to right, #f0fff4, white);
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .match-number {
+      font-weight: bold;
+      color: #667eea;
+      font-size: 1.1em;
+    }
+
+    .match-status {
+      font-size: 0.9em;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-weight: 600;
+    }
+
+    .match-status.pending {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .match-status.completed {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      background: #f7fafc;
+      font-size: 1.1em;
+    }
+
+    .team-row.winner {
+      background: linear-gradient(to right, #c6f6d5, #e6ffed);
+      font-weight: bold;
+      color: #22543d;
+      border: 2px solid #48bb78;
+    }
+
+    .team-name {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .team-sets {
+      font-weight: bold;
+      font-size: 1.5em;
+      color: #667eea;
+      margin: 0 15px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .team-row.winner .team-sets {
+      color: #22543d;
+    }
+
+    .referee-info {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.95em;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-details {
+      margin-top: 10px;
+      font-size: 0.85em;
+      color: #666;
+      text-align: center;
+    }
+
+    .champion-banner {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      border: 4px solid #ffa500;
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      margin: 30px 0;
+      box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3);
+    }
+
+    .champion-banner h2 {
+      font-size: 2.5em;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .champion-name {
+      font-size: 3em;
+      font-weight: bold;
+      color: #b8860b;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e2e8f0;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .empty-state-icon {
+      font-size: 5em;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .tournament-rounds { gap: 20px; }
+      .round { min-width: 250px; }
+      .container { border-radius: 0; }
+      body { padding: 0; }
+      .header h1 { font-size: 1.8em; }
+      .tournament-info { flex-direction: column; gap: 10px; }
+      .section-title { font-size: 1.5em; }
+    }
+  </style>
+</head>
+<body>
+  <a href="javascript:void(0);" class="back-to-top" onclick="goToTop()">← トップに戻る</a>
+
+  <div class="container">
+    <div class="header">
+      <h1 id="tournamentTitle">🏐 バレーボール大会</h1>
+      <div class="tournament-info">
+        <div class="info-item">
+          <span>📅</span>
+          <span id="tournamentDate">開催日未設定</span>
+        </div>
+        <div class="info-item">
+          <span>📍</span>
+          <span id="tournamentVenue">会場未設定</span>
+        </div>
+      </div>
+      <div class="auto-refresh-notice">
+        🔄 30秒ごとに自動更新
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="championBanner" style="display: none;"></div>
+
+      <div class="section">
+        <h2 class="section-title">🏆 トーナメント表</h2>
+        <div id="tournamentDisplay" class="tournament-container">
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>トーナメント情報を読み込んでいます...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbw13mhYCidwyvqC4AKGJ_N-R8ZFt5RZByjQQVdf6sjSgaQnNVhTvUQL3QAfqHfWATgS/exec';
+    
+    let tournamentData = null;
+    let autoRefreshInterval = null;
+
+    function goToTop() {
+      console.log('トップページへ戻ります');
+      window.top.location.href = BASE_URL;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('観客画面が読み込まれました');
+      loadTournamentData();
+      
+      autoRefreshInterval = setInterval(loadTournamentData, 30000);
+    });
+
+    function loadTournamentData() {
+      google.script.run
+        .withSuccessHandler(onDataLoaded)
+        .withFailureHandler(onDataLoadFailed)
+        .getAllData();
+    }
+
+    function onDataLoaded(data) {
+      console.log('✅ データ読み込み成功:', data);
+      
+      if (data && data.settings) {
+        document.getElementById('tournamentTitle').textContent = '🏐 ' + (data.settings.name || 'バレーボール大会');
+        document.getElementById('tournamentDate').textContent = data.settings.date || '開催日未設定';
+        document.getElementById('tournamentVenue').textContent = data.settings.venue || '会場未設定';
+        
+        tournamentData = data;
+        displayTournament();
+      } else {
+        showEmptyState();
+      }
+    }
+
+    function onDataLoadFailed(error) {
+      console.error('❌ データ読み込み失敗:', error);
+      showEmptyState();
+    }
+
+    function displayTournament() {
+      const container = document.getElementById('tournamentDisplay');
+      
+      if (!tournamentData.matches || tournamentData.matches.length === 0) {
+        showEmptyState();
+        return;
+      }
+      
+      const rounds = [
+        { key: 'quarterfinal', name: '準々決勝', matches: tournamentData.matches.filter(m => m.round === 'quarterfinal') },
+        { key: 'semifinal', name: '準決勝', matches: tournamentData.matches.filter(m => m.round === 'semifinal') },
+        { key: 'final', name: '決勝', matches: tournamentData.matches.filter(m => m.round === 'final') }
+      ];
+      
+      const finalMatch = tournamentData.matches.find(m => m.round === 'final' && m.status === 'completed');
+      if (finalMatch && finalMatch.winner) {
+        showChampionBanner(finalMatch.winner);
+      }
+      
+      container.innerHTML = `
+        <div class="tournament-rounds">
+          ${rounds.map(round => `
+            <div class="round">
+              <div class="round-title">${round.name}</div>
+              ${round.matches.length > 0 ? round.matches.map(match => createMatchCard(match)).join('') : '<p style="text-align: center; color: #999;">試合未設定</p>'}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function createMatchCard(match) {
+      const team1Name = match.team1 ? match.team1.name : '未定';
+      const team2Name = match.team2 ? match.team2.name : '未定';
+      const isCompleted = match.status === 'completed';
+      const team1IsWinner = match.winner && match.winner.id === match.team1?.id;
+      const team2IsWinner = match.winner && match.winner.id === match.team2?.id;
+      
+      let statusText = '未開始';
+      let statusClass = 'pending';
+      if (isCompleted) {
+        statusText = '完了';
+        statusClass = 'completed';
+      }
+      
+      let scoreDetails = '';
+      if (isCompleted && match.sets) {
+        const setScores = match.sets.map((set, i) => {
+          if (set.team1Score !== null && set.team2Score !== null) {
+            return `第${i+1}セット: ${set.team1Score}-${set.team2Score}`;
+          }
+          return null;
+        }).filter(s => s !== null);
+        
+        if (setScores.length > 0) {
+          scoreDetails = `<div class="score-details">${setScores.join(' / ')}</div>`;
+        }
+      }
+      
+      return `
+        <div class="match-card ${isCompleted ? 'completed' : ''}">
+          <div class="match-header">
+            <span class="match-number">試合 ${match.matchNumber}</span>
+            <span class="match-status ${statusClass}">${statusText}</span>
+          </div>
+          
+          <div class="team-row ${team1IsWinner ? 'winner' : ''}">
+            <span class="team-name">${team1Name}</span>
+            <span class="team-sets">${match.team1Sets || 0}</span>
+          </div>
+          
+          <div class="team-row ${team2IsWinner ? 'winner' : ''}">
+            <span class="team-name">${team2Name}</span>
+            <span class="team-sets">${match.team2Sets || 0}</span>
+          </div>
+          
+          ${scoreDetails}
+          
+          ${match.referee ? `
+            <div class="referee-info">
+              <span>👨‍⚖️</span>
+              <strong>審判：</strong> ${match.referee}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function showChampionBanner(winner) {
+      const banner = document.getElementById('championBanner');
+      banner.innerHTML = `
+        <h2>🏆 優勝 🏆</h2>
+        <div class="champion-name">${winner.name}</div>
+        <p style="margin-top: 15px; font-size: 1.2em; color: #666;">おめでとうございます！</p>
+      `;
+      banner.style.display = 'block';
+    }
+
+    function showEmptyState() {
+      const container = document.getElementById('tournamentDisplay');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <h3 style="color: #667eea; margin-bottom: 10px;">トーナメントがまだ作成されていません</h3>
+          <p style="color: #666;">管理画面でトーナメントを生成してください</p>
+        </div>
+      `;
+    }
+
+    window.addEventListener('beforeunload', function() {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+      }
+    });
+  </script>
+</body>
+</html>

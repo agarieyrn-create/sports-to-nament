@@ -1,0 +1,324 @@
+<style>
+/* Tournament Pro - 印刷用スタイル（大会要項PDF出力） */
+
+@media print {
+  /* 印刷時のページ設定 */
+  @page {
+    size: A4 portrait;
+    margin: 20mm;
+  }
+  
+  /* 印刷時に非表示にする要素 */
+  .admin-header,
+  .sidebar,
+  .nav-tab,
+  .btn,
+  button,
+  .form-actions,
+  .card-header-actions,
+  .no-print {
+    display: none !important;
+  }
+  
+  /* 印刷時のみ表示 */
+  .print-only {
+    display: block !important;
+  }
+  
+  /* 基本設定 */
+  body {
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #000;
+    background: #fff;
+  }
+  
+  /* 大会要項専用 */
+  .tournament-document {
+    max-width: 100%;
+    padding: 0;
+  }
+  
+  .document-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid #000;
+  }
+  
+  .document-icon {
+    font-size: 48pt;
+    margin-bottom: 10px;
+  }
+  
+  .document-title {
+    font-size: 20pt;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+  
+  .document-subtitle {
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 5px 0;
+  }
+  
+  .document-section {
+    margin-bottom: 25px;
+    page-break-inside: avoid;
+  }
+  
+  .section-number {
+    font-weight: bold;
+    margin-right: 5px;
+  }
+  
+  .section-title {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .section-content {
+    margin-left: 20px;
+  }
+  
+  .subsection {
+    margin-bottom: 10px;
+  }
+  
+  .subsection-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .document-list {
+    margin-left: 30px;
+    list-style-type: disc;
+  }
+  
+  .document-list li {
+    margin-bottom: 5px;
+  }
+  
+  .document-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+  }
+  
+  .document-table th,
+  .document-table td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .document-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+  }
+  
+  .document-footer {
+    margin-top: 40px;
+    text-align: right;
+    padding-top: 20px;
+    border-top: 1px solid #000;
+  }
+  
+  /* 改ページ制御 */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+  
+  table {
+    page-break-inside: avoid;
+  }
+  
+  /* カラー調整 */
+  * {
+    color: #000 !important;
+    background: #fff !important;
+  }
+  
+  /* リンク */
+  a {
+    text-decoration: none;
+    color: #000 !important;
+  }
+  
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666 !important;
+  }
+}
+
+/* 画面表示時の大会要項プレビュー */
+.tournament-document {
+  background: white;
+  padding: 40px;
+  max-width: 210mm; /* A4幅 */
+  margin: 0 auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.document-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid var(--color-text);
+}
+
+.document-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.document-title {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.document-subtitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 5px 0;
+}
+
+.document-section {
+  margin-bottom: 25px;
+}
+
+.section-number {
+  font-weight: bold;
+  color: var(--color-primary);
+  margin-right: 5px;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--color-text);
+}
+
+.section-content {
+  margin-left: 20px;
+  line-height: 1.8;
+}
+
+.subsection {
+  margin-bottom: 10px;
+}
+
+.subsection-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.document-list {
+  margin-left: 30px;
+  list-style-type: disc;
+}
+
+.document-list li {
+  margin-bottom: 5px;
+}
+
+.document-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+
+.document-table th,
+.document-table td {
+  border: 1px solid var(--color-border);
+  padding: 8px;
+  text-align: left;
+}
+
+.document-table th {
+  background: var(--color-background);
+  font-weight: bold;
+}
+
+.document-footer {
+  margin-top: 40px;
+  text-align: right;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.document-actions {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 1.5rem;
+  border-top: 2px solid var(--color-border);
+  box-shadow: 0 -4px 6px rgba(0,0,0,0.05);
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* カスタムフィールドエリア */
+.custom-fields-container {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--color-background);
+  border-radius: var(--radius);
+}
+
+.custom-field-item {
+  display: flex;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: var(--radius);
+}
+
+.custom-field-inputs {
+  flex: 1;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.custom-field-remove {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-custom-field-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--color-secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.add-custom-field-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+</style>

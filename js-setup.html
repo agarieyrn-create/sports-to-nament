@@ -1,0 +1,243 @@
+<script>
+/**
+ * Tournament Pro - セットアップウィザードロジック
+ */
+
+let currentStep = 1;
+let setupData = {};
+
+/**
+ * 次のステップへ
+ */
+function nextStep() {
+  // 現在のステップのデータを保存
+  if (!saveCurrentStepData()) {
+    return;
+  }
+  
+  // 次のステップへ移動
+  currentStep++;
+  
+  if (currentStep === 5) {
+    // 確認画面を表示
+    showConfirmScreen();
+  } else {
+    showStep(currentStep);
+  }
+  
+  updateProgress();
+}
+
+/**
+ * 前のステップへ
+ */
+function prevStep() {
+  currentStep--;
+  showStep(currentStep);
+  updateProgress();
+}
+
+/**
+ * ステップ表示
+ */
+function showStep(step) {
+  document.querySelectorAll('.setup-step').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  
+  const stepElement = document.getElementById('step-' + step);
+  if (stepElement) {
+    stepElement.classList.add('active');
+  }
+}
+
+/**
+ * プログレス更新
+ */
+function updateProgress() {
+  const progress = (currentStep / 4) * 100;
+  document.getElementById('progress-fill').style.width = progress + '%';
+  
+  document.querySelectorAll('.progress-step').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  
+  const activeStep = document.querySelector('.progress-step[data-step="' + currentStep + '"]');
+  if (activeStep) {
+    activeStep.classList.add('active');
+  }
+}
+
+/**
+ * 現在のステップのデータを保存
+ */
+function saveCurrentStepData() {
+  switch(currentStep) {
+    case 1:
+      return saveStep1Data();
+    case 2:
+      return saveStep2Data();
+    case 3:
+      return saveStep3Data();
+    case 4:
+      return saveStep4Data();
+    default:
+      return true;
+  }
+}
+
+/**
+ * ステップ1のデータ保存
+ */
+function saveStep1Data() {
+  const tournamentName = document.getElementById('tournamentName').value.trim();
+  const tournamentDate = document.getElementById('tournamentDate').value;
+  const startTime = document.getElementById('startTime').value;
+  const endTime = document.getElementById('endTime').value;
+  const venueName = document.getElementById('venueName').value.trim();
+  
+  if (!tournamentName || !tournamentDate || !startTime || !endTime || !venueName) {
+    showError('必須項目を入力してください');
+    return false;
+  }
+  
+  setupData.tournamentName = tournamentName;
+  setupData.tournamentDate = tournamentDate;
+  setupData.startTime = startTime;
+  setupData.endTime = endTime;
+  setupData.venueName = venueName;
+  setupData.venueAddress = document.getElementById('venueAddress').value.trim();
+  setupData.courtCount = document.getElementById('courtCount').value;
+  
+  return true;
+}
+
+/**
+ * ステップ2のデータ保存
+ */
+function saveStep2Data() {
+  const teamCount = parseInt(document.getElementById('teamCount').value);
+  const teams = [];
+  
+  for (let i = 1; i <= teamCount; i++) {
+    const input = document.getElementById('team-' + i);
+    if (input) {
+      const name = input.value.trim();
+      if (name) {
+        teams.push({ name: name });
+      }
+    }
+  }
+  
+  if (teams.length < 2) {
+    showError('少なくとも2チーム以上入力してください');
+    return false;
+  }
+  
+  setupData.teams = teams;
+  setupData.teamCount = teams.length;
+  
+  return true;
+}
+
+/**
+ * ステップ3のデータ保存
+ */
+function saveStep3Data() {
+  const matchFormat = document.querySelector('input[name="matchFormat"]:checked');
+  
+  if (!matchFormat) {
+    showError('試合形式を選択してください');
+    return false;
+  }
+  
+  setupData.matchFormat = matchFormat.value;
+  
+  if (matchFormat.value === 'hybrid') {
+    setupData.groupCount = document.getElementById('groupCount').value;
+    setupData.teamsAdvancing = document.getElementById('teamsAdvancing').value;
+    setupData.groupMethod = document.getElementById('groupMethod').value;
+  }
+  
+  return true;
+}
+
+/**
+ * ステップ4のデータ保存
+ */
+function saveStep4Data() {
+  setupData.setFormat = document.getElementById('setFormat').value;
+  setupData.setPoints = document.getElementById('setPoints').value;
+  setupData.finalSetPoints = document.getElementById('finalSetPoints').value;
+  setupData.timeoutCount = document.getElementById('timeoutCount').value;
+  setupData.participationNotes = document.getElementById('participationNotes').value;
+  setupData.useReferees = document.getElementById('useReferees').checked;
+  
+  return true;
+}
+
+/**
+ * チーム入力欄生成
+ */
+function generateTeamInputs() {
+  const teamCount = parseInt(document.getElementById('teamCount').value);
+  const container = document.getElementById('team-inputs');
+  
+  let html = '';
+  for (let i = 1; i <= teamCount; i++) {
+    html += `
+      <div class="team-input-item">
+        <span class="team-number">${i}.</span>
+        <input type="text" id="team-${i}" class="form-control" placeholder="チーム名を入力">
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+}
+
+/**
+ * 試合形式情報更新
+ */
+function updateFormatInfo() {
+  const teamCount = setupData.teamCount || parseInt(document.getElementById('teamCount').value) || 8;
+  const courtCount = parseInt(setupData.courtCount) || 4;
+  const matchDuration = 20; // 分
+  
+  // リーグ戦
+  const leagueMatches = (teamCount * (teamCount - 1)) / 2;
+  const leagueTime = Math.ceil((leagueMatches / courtCount) * matchDuration);
+  document.getElementById('league-time').textContent = `所要時間: 約${Math.ceil(leagueTime / 60)}時間`;
+  document.getElementById('league-matches').textContent = `試合数: ${leagueMatches}試合`;
+  
+  // トーナメント
+  const tournamentMatches = teamCount - 1;
+  const tournamentTime = Math.ceil((tournamentMatches / courtCount) * matchDuration);
+  document.getElementById('tournament-time').textContent = `所要時間: 約${Math.ceil(tournamentTime / 60)}時間`;
+  document.getElementById('tournament-matches').textContent = `試合数: ${tournamentMatches}試合`;
+  
+  // 複合
+  const groupCount = parseInt(document.getElementById('groupCount').value) || 4;
+  const teamsPerGroup = Math.ceil(teamCount / groupCount);
+  const leaguePerGroup = (teamsPerGroup * (teamsPerGroup - 1)) / 2;
+  const totalLeague = leaguePerGroup * groupCount;
+  const teamsAdvancing = parseInt(document.getElementById('teamsAdvancing').value) || 2;
+  const finalistsCount = groupCount * teamsAdvancing;
+  const finalMatches = finalistsCount - 1;
+  const hybridMatches = totalLeague + finalMatches;
+  const hybridTime = Math.ceil((hybridMatches / courtCount) * matchDuration);
+  document.getElementById('hybrid-time').textContent = `所要時間: 約${Math.ceil(hybridTime / 60)}時間`;
+  document.getElementById('hybrid-matches').textContent = `試合数: ${hybridMatches}試合`;
+}
+
+/**
+ * 確認画面表示
+ */
+function showConfirmScreen() {
+  showStep('confirm');
+  
+  const summary = document.getElementById('confirm-summary');
+  
+  let html = `
+    <div class="summary-section">
+      <h3>【<span class="cursor">█</span>

@@ -1,0 +1,218 @@
+<script>
+/**
+ * Tournament Pro - 設定・定数
+ */
+
+// グローバル設定
+const CONFIG = {
+  // アプリケーション情報
+  APP_NAME: 'Tournament Pro',
+  VERSION: '1.0.0',
+  
+  // 自動更新間隔（ミリ秒）
+  AUTO_REFRESH_INTERVAL: 10000, // 10秒
+  
+  // コート名
+  COURT_NAMES: ['A', 'B', 'C', 'D', 'E', 'F'],
+  
+  // グループ名
+  GROUP_NAMES: ['A', 'B', 'C', 'D', 'E', 'F'],
+  
+  // 試合ステージ
+  MATCH_STAGES: {
+    LEAGUE: '予選リーグ',
+    TOURNAMENT: '決勝トーナメント'
+  },
+  
+  // 試合状態
+  MATCH_STATUS: {
+    PENDING: '未開始',
+    ONGOING: '進行中',
+    COMPLETED: '完了'
+  },
+  
+  // タスク状態
+  TASK_STATUS: {
+    PENDING: '未完了',
+    COMPLETED: '完了',
+    DONE: '済'
+  },
+  
+  // カラーテーマ
+  THEMES: {
+    BLUE: {
+      name: 'スポーティブルー',
+      primary: '#2563eb',
+      secondary: '#f97316',
+      accent: '#10b981'
+    },
+    RED: {
+      name: 'ダイナミックレッド',
+      primary: '#dc2626',
+      secondary: '#facc15',
+      accent: '#0ea5e9'
+    },
+    GREEN: {
+      name: 'フレッシュグリーン',
+      primary: '#16a34a',
+      secondary: '#f59e0b',
+      accent: '#3b82f6'
+    },
+    DARK: {
+      name: 'エレガントダーク',
+      primary: '#0f172a',
+      secondary: '#06b6d4',
+      accent: '#f59e0b'
+    }
+  },
+  
+  // デフォルト値
+  DEFAULTS: {
+    COURT_COUNT: 4,
+    MATCH_DURATION: 20, // 分
+    SET_FORMAT: '3set',
+    SET_POINTS: 25,
+    FINAL_SET_POINTS: 15,
+    TIMEOUT_COUNT: 2,
+    COLOR_THEME: 'blue'
+  },
+  
+  // メッセージ
+  MESSAGES: {
+    LOADING: '読み込み中...',
+    SAVING: '保存中...',
+    SUCCESS: '成功しました',
+    ERROR: 'エラーが発生しました',
+    CONFIRM_DELETE: '本当に削除しますか？',
+    NO_DATA: 'データがありません'
+  }
+};
+
+// グローバル変数
+let globalData = {
+  settings: {},
+  teams: [],
+  matches: [],
+  standings: [],
+  tournament: [],
+  tasks: [],
+  document: {}
+};
+
+// 現在のユーザー
+let currentUser = null;
+
+// 現在選択されているテーマ
+let currentTheme = 'blue';
+
+// デバッグモード
+const DEBUG = false;
+
+/**
+ * デバッグログ
+ */
+function debugLog(message, data) {
+  if (DEBUG) {
+    console.log('[Tournament Pro]', message, data || '');
+  }
+}
+
+/**
+ * エラーログ
+ */
+function errorLog(message, error) {
+  console.error('[Tournament Pro Error]', message, error);
+}
+
+/**
+ * ローカルストレージのキー
+ */
+const STORAGE_KEYS = {
+  THEME: 'tournamentPro_theme',
+  AUTO_REFRESH: 'tournamentPro_autoRefresh',
+  USER_SETTINGS: 'tournamentPro_userSettings'
+};
+
+/**
+ * ローカルストレージから値を取得
+ */
+function getStorageItem(key, defaultValue) {
+  try {
+    const value = localStorage.getItem(key);
+    return value !== null ? JSON.parse(value) : defaultValue;
+  } catch (error) {
+    errorLog('ローカルストレージ取得エラー', error);
+    return defaultValue;
+  }
+}
+
+/**
+ * ローカルストレージに値を保存
+ */
+function setStorageItem(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    errorLog('ローカルストレージ保存エラー', error);
+    return false;
+  }
+}
+
+/**
+ * 日付フォーマット
+ */
+function formatDate(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * 時刻フォーマット
+ */
+function formatTime(time) {
+  if (!time) return '';
+  if (typeof time === 'string' && time.includes(':')) return time;
+  
+  const d = new Date(time);
+  if (isNaN(d.getTime())) return '';
+  
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${hours}:${minutes}`;
+}
+
+/**
+ * 曜日取得
+ */
+function getDayOfWeek(date) {
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return days[d.getDay()];
+}
+
+/**
+ * 数値フォーマット
+ */
+function formatNumber(num) {
+  if (num === null || num === undefined || num === '') return '-';
+  return Number(num).toLocaleString('ja-JP');
+}
+
+/**
+ * パーセンテージ計算
+ */
+function calculatePercentage(value, total) {
+  if (!total || total === 0) return 0;
+  return Math.round((value / total) * 100);
+}
+</script>

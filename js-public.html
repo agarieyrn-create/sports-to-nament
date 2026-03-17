@@ -1,0 +1,327 @@
+<script>
+/**
+ * Tournament Pro - 観客向け画面ロジック
+ */
+
+/**
+ * 観客向けデータ読み込み
+ */
+function loadPublicData() {
+  debugLog('観客向けデータを読み込み中...');
+  
+  loadAllData(function(success) {
+    if (success) {
+      updatePublicHeader();
+      updatePublicView();
+      updateLastUpdateTime();
+    }
+  });
+}
+
+/**
+ * ヘッダー更新
+ */
+function updatePublicHeader() {
+  const settings = globalData.settings;
+  
+  document.getElementById('tournament-name').textContent = 
+    settings.tournamentName || 'バレーボール大会';
+  
+  const date = settings.tournamentDate ? formatDate(settings.tournamentDate) : '';
+  const dayOfWeek = settings.tournamentDate ? getDayOfWeek(settings.tournamentDate) : '';
+  const venue = settings.venueName || '';
+  
+  let info = '';
+  if (date) info += `${date}(${dayOfWeek}) `;
+  if (venue) info += `@ ${venue}`;
+  
+  document.getElementById('tournament-info').textContent = info;
+}
+
+/**
+ * 現在のビュー更新
+ */
+function updatePublicView() {
+  const activeView = document.querySelector('.view-content.active');
+  if (!activeView) return;
+  
+  const viewId = activeView.id;
+  
+  switch(viewId) {
+    case 'view-live':
+      updateLiveView();
+      break;
+    case 'view-schedule':
+      updateScheduleView();
+      break;
+    case 'view-standings':
+      updateStandingsView();
+      break;
+    case 'view-tournament':
+      updateTournamentView();
+      break;
+    case 'view-info':
+      updateInfoView();
+      break;
+  }
+}
+
+/**
+ * LIVE表示更新
+ */
+function updateLiveView() {
+  const matches = globalData.matches;
+  
+  // 進行中の試合
+  const liveMatches = matches.filter(m => m.status === CONFIG.MATCH_STATUS.ONGOING);
+  const liveContainer = document.getElementById('live-matches');
+  const noLive = document.getElementById('no-live-matches');
+  
+  if (liveMatches.length === 0) {
+    liveContainer.innerHTML = '';
+    noLive.style.display = 'block';
+  } else {
+    noLive.style.display = 'none';
+    let html = '';
+    
+    liveMatches.forEach(function(match) {
+      const teamA = getTeamNameById(match.teamA);
+      const teamB = getTeamNameById(match.teamB);
+      
+      html += `
+        <div class="live-match-card">
+          <div class="live-match-header">
+            <span class="live-badge"><span class="live-indicator"></span> LIVE</span>
+            <span class="court-label">コート${escapeHtml(match.court)}</span>
+          </div>
+          <div class="live-teams">
+            <div class="live-team">
+              <span class="live-team-name">${escapeHtml(teamA)}</span>
+              <span class="live-score">${formatScore(match.scoreA_S1 + match.scoreA_S2 + (match.scoreA_S3 || 0))}</span>
+            </div>
+            <div class="live-team">
+              <span class="live-team-name">${escapeHtml(teamB)}</span>
+              <span class="live-score">${formatScore(match.scoreB_S1 + match.scoreB_S2 + (match.scoreB_S3 || 0))}</span>
+            </div>
+          </div>
+          <div class="live-set-scores">
+            <div class="set-score">
+              <div class="set-label">第1セット</div>
+              <div class="set-value">${formatScore(match.scoreA_S1)}-${formatScore(match.scoreB_S1)}</div>
+            </div>
+            <div class="set-score">
+              <div class="set-label">第2セット</div>
+              <div class="set-value">${formatScore(match.scoreA_S2)}-${formatScore(match.scoreB_S2)}</div>
+            </div>
+            ${match.scoreA_S3 ? `
+              <div class="set-score">
+                <div class="set-label">第3セット</div>
+                <div class="set-value">${formatScore(match.scoreA_S3)}-${formatScore(match.scoreB_S3)}</div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    liveContainer.innerHTML = html;
+  }
+  
+  // 次の試合
+  const nextMatches = matches.filter(m => m.status === CONFIG.MATCH_STATUS.PENDING).slice(0, 6);
+  const nextContainer = document.getElementById('next-matches');
+  
+  let nextHtml = '';
+  nextMatches.forEach(function(match) {
+    const teamA = getTeamNameById(match.teamA);
+    const teamB = getTeamNameById(match.teamB);
+    
+    nextHtml += `
+      <div class="match-card-public">
+        <div class="match-time">🕒 ${formatTime(match.startTime)} | コート${escapeHtml(match.court)}</div>
+        <div class="match-teams-public">
+          <span class="team-name-public">${escapeHtml(teamA)}</span>
+          <span class="vs-text">vs</span>
+          <span class="team-name-public">${escapeHtml(teamB)}</span>
+        </div>
+      </div>
+    `;
+  });
+  
+  nextContainer.innerHTML = nextHtml || '<p class="no-data">次の試合はまだ決まっていません</p>';
+  
+  // 最近完了した試合
+  const recentMatches = matches.filter(m => m.status === CONFIG.MATCH_STATUS.COMPLETED).slice(-5).reverse();
+  const recentContainer = document.getElementById('recent-matches');
+  
+  let recentHtml = '';
+  recentMatches.forEach(function(match) {
+    const teamA = getTeamNameById(match.teamA);
+    const teamB = getTeamNameById(match.teamB);
+    const winner = determineWinner(match.scoreA_S1, match.scoreB_S1, match.scoreA_S2, match.scoreB_S2, match.scoreA_S3, match.scoreB_S3);
+    
+    recentHtml += `
+      <div class="match-item-public">
+        <div>
+          <div>${escapeHtml(teamA)} vs ${escapeHtml(teamB)}</div>
+          <small>コート${escapeHtml(match.court)}</small>
+        </div>
+        <div class="match-result">
+          ${formatScore(match.scoreA_S1)}-${formatScore(match.scoreB_S1)} / 
+          ${formatScore(match.scoreA_S2)}-${formatScore(match.scoreB_S2)}
+          ${match.scoreA_S3 ? ' / ' + formatScore(match.scoreA_S3) + '-' + formatScore(match.scoreB_S3) : ''}
+        </div>
+      </div>
+    `;
+  });
+  
+  recentContainer.innerHTML = recentHtml || '<p class="no-data">完了した試合はまだありません</p>';
+}
+
+/**
+ * スケジュール表示更新
+ */
+function updateScheduleView() {
+  const matches = globalData.matches;
+  const container = document.getElementById('schedule-container');
+  
+  let html = '';
+  matches.forEach(function(match) {
+    const teamA = getTeamNameById(match.teamA);
+    const teamB = getTeamNameById(match.teamB);
+    
+    html += `
+      <div class="schedule-match match-card-public" data-stage="${escapeHtml(match.stage)}">
+        <div class="match-time">
+          ${formatTime(match.startTime)} | コート${escapeHtml(match.court)} | ${escapeHtml(match.stage)}
+        </div>
+        <div class="match-teams-public">
+          <span class="team-name-public">${escapeHtml(teamA)}</span>
+          <span class="vs-text">vs</span>
+          <span class="team-name-public">${escapeHtml(teamB)}</span>
+        </div>
+        <div>${getStatusBadge(match.status)}</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+/**
+ * 順位表表示更新
+ */
+function updateStandingsView() {
+  const standings = globalData.standings;
+  const container = document.getElementById('standings-container');
+  
+  // グループ別に整理
+  const groups = {};
+  standings.forEach(function(standing) {
+    if (!groups[standing.group]) {
+      groups[standing.group] = [];
+    }
+    groups[standing.group].push(standing);
+  });
+  
+  let html = '';
+  Object.keys(groups).sort().forEach(function(group) {
+    html += `
+      <div class="standings-group">
+        <div class="group-header">グループ${group}</div>
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th>順位</th>
+              <th>チーム</th>
+              <th>勝点</th>
+              <th>勝</th>
+              <th>敗</th>
+              <th>得失点差</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    
+    groups[group].forEach(function(standing) {
+      const teamName = getTeamNameById(standing.teamId);
+      const qualified = standing.rank <= 2 ? 'qualified' : '';
+      
+      html += `
+        <tr class="${qualified}">
+          <td class="rank-cell">${standing.rank}</td>
+          <td class="team-cell">${escapeHtml(teamName)}</td>
+          <td>${standing.points}</td>
+          <td>${standing.wins}</td>
+          <td>${standing.losses}</td>
+          <td>${standing.difference >= 0 ? '+' : ''}${standing.difference}</td>
+        </tr>
+      `;
+    });
+    
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html || '<p class="no-data">順位データがありません</p>';
+}
+
+/**
+ * トーナメント表示更新
+ */
+function updateTournamentView() {
+  const tournament = globalData.tournament;
+  const container = document.getElementById('tournament-container');
+  const noData = document.getElementById('no-tournament');
+  
+  if (tournament.length === 0) {
+    container.innerHTML = '';
+    noData.style.display = 'block';
+    return;
+  }
+  
+  noData.style.display = 'none';
+  
+  // 簡易的なトーナメント表示
+  let html = '<div class="tournament-bracket">';
+  html += '<p>トーナメント表が表示されます（実装中）</p>';
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
+/**
+ * 大会情報表示更新
+ */
+function updateInfoView() {
+  const settings = globalData.settings;
+  const matches = globalData.matches;
+  const teams = globalData.teams;
+  
+  // 基本情報
+  document.getElementById('info-name').textContent = settings.tournamentName || '-';
+  document.getElementById('info-date').textContent = 
+    settings.tournamentDate ? `${formatDate(settings.tournamentDate)}(${getDayOfWeek(settings.tournamentDate)})` : '-';
+  document.getElementById('info-time').textContent = 
+    settings.startTime && settings.endTime ? `${formatTime(settings.startTime)} ～ ${formatTime(settings.endTime)}` : '-';
+  document.getElementById('info-venue').textContent = settings.venueName || '-';
+  document.getElementById('info-address').textContent = settings.venueAddress || '-';
+  
+  // 進行状況
+  const completed = matches.filter(m => m.status === CONFIG.MATCH_STATUS.COMPLETED).length;
+  const ongoing = matches.filter(m => m.status === CONFIG.MATCH_STATUS.ONGOING).length;
+  const total = matches.length;
+  const progress = total > 0 ? calculatePercentage(completed, total) : 0;
+  
+  document.getElementById('info-completed').textContent = `${completed} / ${total}`;
+  document.getElementById('info-ongoing').textContent = ongoing;
+  document.getElementById('info-teams').textContent = teams.length;
+  document.getElementById('info-progress-bar').style.width = progress + '%';
+  document.getElementById('info-progress-text').textContent = progress + '%';
+  
+  // ルール
+  const rulesHtml = `
+    <p><strong>試合形式:</strong> ${settings.setFormat ===<span class="cursor">█</span>

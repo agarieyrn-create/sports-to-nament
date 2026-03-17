@@ -1,0 +1,288 @@
+<script>
+/**
+ * Tournament Pro - 大会要項生成機能
+ */
+
+let customFieldsCount = 0;
+
+/**
+ * 大会要項フォーム読み込み
+ */
+function loadTournamentDocumentForm() {
+  debugLog('大会要項フォームを読み込み中...');
+  
+  loadTournamentDocumentFromServer(function(success, data) {
+    if (success && data) {
+      populateDocumentForm(data);
+    } else {
+      // 設定から初期値を設定
+      populateDocumentFormFromSettings();
+    }
+  });
+  
+  renderDocumentForm();
+}
+
+/**
+ * フォームレンダリング
+ */
+function renderDocumentForm() {
+  const formContainer = document.getElementById('document-form');
+  
+  const html = `
+    <h3 class="section-subtitle">基本情報</h3>
+    <div class="form-group">
+      <label class="form-label">主催</label>
+      <input type="text" id="doc-organizer" class="form-control" placeholder="例: 株式会社○○ 労働組合">
+    </div>
+    <div class="form-group">
+      <label class="form-label">共催・後援（任意）</label>
+      <input type="text" id="doc-coOrganizer" class="form-control">
+    </div>
+    
+    <h3 class="section-subtitle">日程・会場</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">受付時間</label>
+        <input type="time" id="doc-receptionTime" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">開会式</label>
+        <input type="time" id="doc-openingCeremonyTime" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">閉会式</label>
+        <input type="time" id="doc-closingCeremonyTime" class="form-control">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">会場郵便番号</label>
+      <input type="text" id="doc-venuePostalCode" class="form-control" placeholder="〒000-0000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">アクセス（任意）</label>
+      <textarea id="doc-venueAccess" class="form-control" rows="3" placeholder="例: 那覇バスターミナルより徒歩10分&#10;駐車場: 100台完備"></textarea>
+    </div>
+    
+    <h3 class="section-subtitle">競技要項</h3>
+    <div class="form-group">
+      <label class="form-label">競技種目</label>
+      <input type="text" id="doc-sportType" class="form-control" value="バレーボール">
+    </div>
+    <div class="form-group">
+      <label class="form-label">参加資格</label>
+      <textarea id="doc-eligibility" class="form-control" rows="3" placeholder="例: 当社社員及びその家族&#10;年齢制限なし"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">チーム編成</label>
+        <input type="text" id="doc-teamSize" class="form-control" placeholder="例: 1チーム6名以上10名以内">
+      </div>
+      <div class="form-group">
+        <label class="form-label">参加費</label>
+        <input type="text" id="doc-entryFee" class="form-control" placeholder="例: 1チーム3,000円">
+      </div>
+    </div>
+    
+    <h3 class="section-subtitle">表彰</h3>
+    <div class="form-group">
+      <label class="form-label">表彰</label>
+      <input type="text" id="doc-awards" class="form-control" value="優勝、準優勝、3位">
+    </div>
+    
+    <h3 class="section-subtitle">参加にあたっての注意事項</h3>
+    <div class="form-group">
+      <label class="form-label">服装</label>
+      <textarea id="doc-dress" class="form-control" rows="2" placeholder="例: 運動着、体育館シューズ着用必須"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">持参品</label>
+      <textarea id="doc-bringItems" class="form-control" rows="2" placeholder="例: 飲み物、タオル、着替え"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">禁止事項</label>
+      <textarea id="doc-prohibitions" class="form-control" rows="2" placeholder="例: 館内での飲酒・喫煙禁止&#10;ゴミは各自持ち帰り"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">保険</label>
+      <textarea id="doc-insurance" class="form-control" rows="2" placeholder="例: レクリエーション保険加入済&#10;怪我・事故は自己責任"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">その他注意事項（任意）</label>
+      <textarea id="doc-otherNotes" class="form-control" rows="3"></textarea>
+    </div>
+    
+    <h3 class="section-subtitle">申し込み</h3>
+    <div class="form-group">
+      <label class="form-label">申込期限</label>
+      <input type="date" id="doc-applicationDeadline" class="form-control">
+    </div>
+    <div class="form-group">
+      <label class="form-label">申込方法</label>
+      <textarea id="doc-applicationMethod" class="form-control" rows="3" placeholder="例: メールにて下記宛先まで&#10;件名「バレー大会参加申込」&#10;本文: チーム名、代表者名、連絡先、参加人数"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">担当者</label>
+        <input type="text" id="doc-contactPerson" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">電話</label>
+        <input type="tel" id="doc-contactPhone" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="doc-contactEmail" class="form-control">
+      </div>
+    </div>
+    
+    <h3 class="section-subtitle">任意の追加項目</h3>
+    <div id="custom-fields-container" class="custom-fields-container">
+      <!-- カスタムフィールドがここに追加される -->
+    </div>
+    <button type="button" onclick="addCustomField()" class="add-custom-field-btn">+ 項目を追加</button>
+    
+    <div class="form-actions">
+      <button type="button" onclick="previewDocument()" class="btn btn-secondary">📄 プレビュー</button>
+      <button type="button" onclick="saveDocumentData()" class="btn btn-primary">💾 保存</button>
+    </div>
+  `;
+  
+  formContainer.innerHTML = html;
+}
+
+/**
+ * 設定からフォームに初期値を設定
+ */
+function populateDocumentFormFromSettings() {
+  const settings = globalData.settings;
+  
+  // 基本設定から自動入力できる項目のみ設定
+  // その他は空欄のまま
+}
+
+/**
+ * データからフォームに値を設定
+ */
+function populateDocumentForm(data) {
+  Object.keys(data).forEach(function(key) {
+    const element = document.getElementById('doc-' + key);
+    if (element && data[key]) {
+      element.value = data[key];
+    }
+  });
+  
+  // カスタムフィールドを復元
+  if (data.customFields && Array.isArray(data.customFields)) {
+    data.customFields.forEach(function(field) {
+      addCustomField(field.title, field.content);
+    });
+  }
+}
+
+/**
+ * カスタムフィールド追加
+ */
+function addCustomField(title = '', content = '') {
+  customFieldsCount++;
+  const container = document.getElementById('custom-fields-container');
+  
+  const fieldHtml = `
+    <div class="custom-field-item" id="custom-field-${customFieldsCount}">
+      <div class="custom-field-inputs">
+        <input type="text" class="form-control custom-field-title" placeholder="項目名（例: 表彰式での注意事項）" value="${escapeHtml(title)}">
+        <textarea class="form-control custom-field-content" rows="2" placeholder="内容を入力">${escapeHtml(content)}</textarea>
+      </div>
+      <button type="button" class="custom-field-remove" onclick="removeCustomField(${customFieldsCount})">×</button>
+    </div>
+  `;
+  
+  container.insertAdjacentHTML('beforeend', fieldHtml);
+}
+
+/**
+ * カスタムフィールド削除
+ */
+function removeCustomField(id) {
+  const field = document.getElementById('custom-field-' + id);
+  if (field) {
+    field.remove();
+  }
+}
+
+/**
+ * 大会要項データを保存
+ */
+function saveDocumentData() {
+  const document = {
+    organizer: document.getElementById('doc-organizer').value,
+    coOrganizer: document.getElementById('doc-coOrganizer').value,
+    receptionTime: document.getElementById('doc-receptionTime').value,
+    openingCeremonyTime: document.getElementById('doc-openingCeremonyTime').value,
+    closingCeremonyTime: document.getElementById('doc-closingCeremonyTime').value,
+    venuePostalCode: document.getElementById('doc-venuePostalCode').value,
+    venueAccess: document.getElementById('doc-venueAccess').value,
+    sportType: document.getElementById('doc-sportType').value,
+    eligibility: document.getElementById('doc-eligibility').value,
+    teamSize: document.getElementById('doc-teamSize').value,
+    entryFee: document.getElementById('doc-entryFee').value,
+    awards: document.getElementById('doc-awards').value,
+    dress: document.getElementById('doc-dress').value,
+    bringItems: document.getElementById('doc-bringItems').value,
+    prohibitions: document.getElementById('doc-prohibitions').value,
+    insurance: document.getElementById('doc-insurance').value,
+    otherNotes: document.getElementById('doc-otherNotes').value,
+    applicationDeadline: document.getElementById('doc-applicationDeadline').value,
+    applicationMethod: document.getElementById('doc-applicationMethod').value,
+    contactPerson: document.getElementById('doc-contactPerson').value,
+    contactPhone: document.getElementById('doc-contactPhone').value,
+    contactEmail: document.getElementById('doc-contactEmail').value,
+    customFields: []
+  };
+  
+  // カスタムフィールドを収集
+  document.querySelectorAll('.custom-field-item').forEach(function(item) {
+    const title = item.querySelector('.custom-field-title').value;
+    const content = item.querySelector('.custom-field-content').value;
+    if (title || content) {
+      document.customFields.push({ title: title, content: content });
+    }
+  });
+  
+  showLoading(true);
+  saveTournamentDocumentToServer(document, function(success) {
+    showLoading(false);
+  });
+}
+
+/**
+ * プレビュー表示
+ */
+function previewDocument() {
+  // PDF出力画面を新しいウィンドウで開く
+  const previewWindow = window.open('', '大会要項プレビュー', 'width=800,height=1000');
+  
+  const settings = globalData.settings;
+  const html = generateDocumentHTML(settings);
+  
+  previewWindow.document.write(html);
+  previewWindow.document.close();
+}
+
+/**
+ * 大会要項HTMLを生成
+ */
+function generateDocumentHTML(settings) {
+  const doc = {
+    organizer: document.getElementById('doc-organizer').value,
+    // ... 他のフィールドも同様に取得
+  };
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>大会要項</title>
+      <style>
+        ${document.querySelector<span class="cursor">█</span>

@@ -1,0 +1,534 @@
+<script>
+/**
+ * Tournament Pro - 管理画面ロジック
+ */
+
+// 現在のタブ
+let currentTab = 'dashboard';
+
+// ページ読み込み時の初期化
+window.onload = function() {
+  debugLog('管理画面を初期化中...');
+  
+  // ユーザー認証チェック（簡易版）
+  checkAuthentication();
+  
+  // 保存されたテーマを適用
+  const savedTheme = getStorageItem(STORAGE_KEYS.THEME, CONFIG.DEFAULTS.COLOR_THEME);
+  applyThemeColors(savedTheme);
+};
+
+/**
+ * 認証チェック
+ */
+function checkAuthentication() {
+  // 実際の認証はGoogle Apps Scriptで行う
+  // ここでは簡易的にログイン画面を表示
+  showLoading(true);
+  
+  google.script.run
+    .withSuccessHandler(function(user) {
+      if (user && user.isAuthenticated) {
+        currentUser = user;
+        document.getElementById('user-name').textContent = user.email;
+        showLoginScreen(false);
+        showAdminScreen(true);
+        loadDashboard();
+      } else {
+        showLoginScreen(true);
+        showAdminScreen(false);
+      }
+      showLoading(false);
+    })
+    .withFailureHandler(function(error) {
+      errorLog('認証エラー', error);
+      showLoginScreen(true);
+      showAdminScreen(false);
+      showLoading(false);
+    })
+    .getCurrentUser();
+}
+
+/**
+ * ログイン画面表示
+ */
+function showLoginScreen(show) {
+  toggleElement('login-screen', show);
+}
+
+/**
+ * 管理画面表示
+ */
+function showAdminScreen(show) {
+  toggleElement('admin-screen', show);
+}
+
+/**
+ * ログイン処理
+ */
+function handleLogin() {
+  // Google認証は実際にはサーバー側で処理
+  showLoading(true);
+  
+  // 仮の処理（実装時はOAuth2フローを使用）
+  setTimeout(function() {
+    checkAuthentication();
+  }, 1000);
+}
+
+/**
+ * ログアウト処理
+ */
+function handleLogout() {
+  confirmDialog('ログアウトしますか？', function() {
+    showLoading(true);
+    currentUser = null;
+    showAdminScreen(false);
+    showLoginScreen(true);
+    showLoading(false);
+  });
+}
+
+/**
+ * タブ切り替え
+ */
+function switchTab(tabName) {
+  debugLog('タブ切り替え:', tabName);
+  
+  // すべてのタブとメニューアイテムを非アクティブ化
+  document.querySelectorAll('.tab-content').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  document.querySelectorAll('.menu-item').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  
+  // 選択されたタブをアクティブ化
+  const tabContent = document.getElementById('tab-' + tabName);
+  const menuItem = document.querySelector('.menu-item[data-tab="' + tabName + '"]');
+  
+  if (tabContent) tabContent.classList.add('active');
+  if (menuItem) menuItem.classList.add('active');
+  
+  currentTab = tabName;
+  
+  // タブごとの読み込み処理
+  switch(tabName) {
+    case 'dashboard':
+      loadDashboard();
+      break;
+    case 'settings':
+      loadSettings();
+      break;
+    case 'teams':
+      loadTeams();
+      break;
+    case 'matches':
+      loadMatches();
+      break;
+    case 'timetable':
+      loadTimetable();
+      break;
+    case 'tournament':
+      loadTournament();
+      break;
+    case 'document':
+      loadTournamentDocumentForm();
+      break;
+    case 'tasks':
+      loadTasks();
+      break;
+    case 'theme':
+      loadThemeSettings();
+      break;
+    case 'qrcode':
+      loadQRCodes();
+      break;
+  }
+}
+
+// メニューアイテムのクリックイベント
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.menu-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
+      if (tabName) switchTab(tabName);
+    });
+  });
+});
+
+/**
+ * ダッシュボード読み込み
+ */
+function loadDashboard() {
+  debugLog('ダッシュボードを読み込み中...');
+  
+  loadAllData(function(success) {
+    if (success) {
+      updateDashboardStats();
+      updateCourtStatus();
+    }
+  });
+}
+
+/**
+ * ダッシュボード統計更新
+ */
+function updateDashboardStats() {
+  const matches = globalData.matches;
+  
+  const completed = matches.filter(m => m.status === CONFIG.MATCH_STATUS.COMPLETED).length;
+  const ongoing = matches.filter(m => m.status === CONFIG.MATCH_STATUS.ONGOING).length;
+  const pending = matches.filter(m => m.status === CONFIG.MATCH_STATUS.PENDING).length;
+  const total = matches.length;
+  const progress = total > 0 ? calculatePercentage(completed, total) : 0;
+  
+  document.getElementById('stat-completed').textContent = completed;
+  document.getElementById('stat-ongoing').textContent = ongoing;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-progress').textContent = progress;
+}
+
+/**
+ * コート状況更新
+ */
+function updateCourtStatus() {
+  const matches = globalData.matches;
+  const courtCount = parseInt(globalData.settings.courtCount) || CONFIG.DEFAULTS.COURT_COUNT;
+  const courtStatus = document.getElementById('court-status');
+  
+  if (!courtStatus) return;
+  
+  let html = '';
+  
+  for (let i = 0; i < courtCount; i++) {
+    const courtName = CONFIG.COURT_NAMES[i];
+    const ongoingMatch = matches.find(m => 
+      m.court === courtName && m.status === CONFIG.MATCH_STATUS.ONGOING
+    );
+    
+    if (ongoingMatch) {
+      const teamA = getTeamNameById(ongoingMatch.teamA);
+      const teamB = getTeamNameById(ongoingMatch.teamB);
+      html += `
+        <div class="court-item occupied">
+          <span class="court-name">コート${courtName}</span>
+          <span class="court-status">🔴 試合中 - ${escapeHtml(teamA)} vs ${escapeHtml(teamB)}</span>
+        </div>
+      `;
+    } else {
+      const nextMatch = matches.find(m => 
+        m.court === courtName && m.status === CONFIG.MATCH_STATUS.PENDING
+      );
+      
+      if (nextMatch) {
+        html += `
+          <div class="court-item preparing">
+            <span class="court-name">コート${courtName}</span>
+            <span class="court-status">🟡 準備中 - 次: ${formatTime(nextMatch.startTime)}</span>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="court-item available">
+            <span class="court-name">コート${courtName}</span>
+            <span class="court-status">🟢 空き</span>
+          </div>
+        `;
+      }
+    }
+  }
+  
+  courtStatus.innerHTML = html;
+}
+
+/**
+ * データ再読み込み
+ */
+function refreshData() {
+  showLoading(true);
+  loadAllData(function(success) {
+    showLoading(false);
+    if (success) {
+      showSuccess('データを更新しました');
+      // 現在のタブを再読み込み
+      switchTab(currentTab);
+    }
+  });
+}
+
+/**
+ * 設定読み込み
+ */
+function loadSettings() {
+  debugLog('設定を読み込み中...');
+  
+  const settings = globalData.settings;
+  
+  // フォームに値を設定
+  document.getElementById('setting-tournamentName').value = settings.tournamentName || '';
+  document.getElementById('setting-tournamentDate').value = formatDate(settings.tournamentDate) || '';
+  document.getElementById('setting-startTime').value = formatTime(settings.startTime) || '13:00';
+  document.getElementById('setting-endTime').value = formatTime(settings.endTime) || '17:00';
+  document.getElementById('setting-venueName').value = settings.venueName || '';
+  document.getElementById('setting-venueAddress').value = settings.venueAddress || '';
+  document.getElementById('setting-courtCount').value = settings.courtCount || CONFIG.DEFAULTS.COURT_COUNT;
+  document.getElementById('setting-matchFormat').value = settings.matchFormat || 'hybrid';
+  document.getElementById('setting-groupCount').value = settings.groupCount || '4';
+  document.getElementById('setting-teamsAdvancing').value = settings.teamsAdvancing || '2';
+  document.getElementById('setting-setFormat').value = settings.setFormat || CONFIG.DEFAULTS.SET_FORMAT;
+  document.getElementById('setting-setPoints').value = settings.setPoints || CONFIG.DEFAULTS.SET_POINTS;
+  document.getElementById('setting-finalSetPoints').value = settings.finalSetPoints || CONFIG.DEFAULTS.FINAL_SET_POINTS;
+  document.getElementById('setting-timeoutCount').value = settings.timeoutCount || CONFIG.DEFAULTS.TIMEOUT_COUNT;
+  
+  // 試合形式による表示切り替え
+  toggleHybridSettings();
+  
+  // イベントリスナー追加
+  document.getElementById('setting-matchFormat').addEventListener('change', toggleHybridSettings);
+}
+
+/**
+ * ハイブリッド設定の表示切り替え
+ */
+function toggleHybridSettings() {
+  const format = document.getElementById('setting-matchFormat').value;
+  const hybridSettings = document.getElementById('hybrid-settings');
+  
+  if (hybridSettings) {
+    hybridSettings.style.display = format === 'hybrid' ? 'block' : 'none';
+  }
+}
+
+/**
+ * 設定保存
+ */
+function saveSettings() {
+  const settings = {
+    tournamentName: document.getElementById('setting-tournamentName').value,
+    tournamentDate: document.getElementById('setting-tournamentDate').value,
+    startTime: document.getElementById('setting-startTime').value,
+    endTime: document.getElementById('setting-endTime').value,
+    venueName: document.getElementById('setting-venueName').value,
+    venueAddress: document.getElementById('setting-venueAddress').value,
+    courtCount: document.getElementById('setting-courtCount').value,
+    matchFormat: document.getElementById('setting-matchFormat').value,
+    groupCount: document.getElementById('setting-groupCount').value,
+    teamsAdvancing: document.getElementById('setting-teamsAdvancing').value,
+    setFormat: document.getElementById('setting-setFormat').value,
+    setPoints: document.getElementById('setting-setPoints').value,
+    finalSetPoints: document.getElementById('setting-finalSetPoints').value,
+    timeoutCount: document.getElementById('setting-timeoutCount').value
+  };
+  
+  showLoading(true);
+  saveSettingsToServer(settings, function(success) {
+    showLoading(false);
+    if (success) {
+      globalData.settings = settings;
+    }
+  });
+}
+
+/**
+ * チーム読み込み
+ */
+function loadTeams() {
+  debugLog('チームを読み込み中...');
+  
+  const teams = globalData.teams;
+  const tbody = document.getElementById('teams-table-body');
+  
+  if (!tbody) return;
+  
+  if (teams.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">チームが登録されていません</td></tr>';
+    return;
+  }
+  
+  let html = '';
+  teams.forEach(function(team) {
+    html += `
+      <tr>
+        <td>${escapeHtml(team.id)}</td>
+        <td>${escapeHtml(team.name)}</td>
+        <td>${escapeHtml(team.group)}</td>
+        <td>${escapeHtml(team.rank)}</td>
+        <td>${escapeHtml(team.contact)}</td>
+        <td>${team.paymentStatus ? '✅ 済' : '❌ 未払い'}</td>
+        <td>
+          <button onclick="editTeam(${team.id})" class="btn btn-small btn-secondary">✏️</button>
+          <button onclick="deleteTeam(${team.id})" class="btn btn-small btn-danger">🗑️</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  tbody.innerHTML = html;
+}
+
+/**
+ * チーム追加モーダル表示
+ */
+function showAddTeamModal() {
+  // モーダルのHTMLを生成して表示
+  const modal = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">新しいチームを追加</h3>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label required">チーム名</label>
+            <input type="text" id="new-team-name" class="form-control" placeholder="例: 新入社員A">
+          </div>
+          <div class="form-group">
+            <label class="form-label">グループ</label>
+            <select id="new-team-group" class="form-control">
+              <option value="">未設定</option>
+              <option value="A">グループA</option>
+              <option value="B">グループB</option>
+              <option value="C">グループC</option>
+              <option value="D">グループD</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ランク</label>
+            <select id="new-team-rank" class="form-control">
+              <option value="">未設定</option>
+              <option value="A">A（強豪）</option>
+              <option value="B">B（中堅）</option>
+              <option value="C">C（初心者）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">連絡先</label>
+            <input type="email" id="new-team-contact" class="form-control" placeholder="例: team@example.com">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
+          <button onclick="submitNewTeam()" class="btn btn-primary">追加</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('modal-container').innerHTML = modal;
+}
+
+/**
+ * 新しいチームを送信
+ */
+function submitNewTeam() {
+  const name = document.getElementById('new-team-name').value.trim();
+  
+  if (!name) {
+    showError('チーム名を入力してください');
+    return;
+  }
+  
+  const team = {
+    name: name,
+    group: document.getElementById('new-team-group').value,
+    rank: document.getElementById('new-team-rank').value,
+    contact: document.getElementById('new-team-contact').value,
+    paymentStatus: false
+  };
+  
+  showLoading(true);
+  addTeamToServer(team, function(success) {
+    showLoading(false);
+    if (success) {
+      closeModal();
+      refreshData();
+    }
+  });
+}
+
+/**
+ * モーダルを閉じる
+ */
+function closeModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('modal-container').innerHTML = '';
+}
+
+/**
+ * 試合読み込み
+ */
+function loadMatches() {
+  debugLog('試合を読み込み中...');
+  
+  const matches = globalData.matches;
+  const container = document.getElementById('matches-container');
+  
+  if (!container) return;
+  
+  if (matches.length === 0) {
+    container.innerHTML = '<p class="no-data">試合がまだ登録されていません。「スケジュール自動生成」から作成してください。</p>';
+    return;
+  }
+  
+  let html = '';
+  matches.forEach(function(match) {
+    const teamAName = getTeamNameById(match.teamA);
+    const teamBName = getTeamNameById(match.teamB);
+    const refereeName = getTeamNameById(match.referee);
+    
+    const statusClass = match.status === CONFIG.MATCH_STATUS.ONGOING ? 'ongoing' : 
+                       match.status === CONFIG.MATCH_STATUS.COMPLETED ? 'completed' : '';
+    
+    html += `
+      <div class="match-card ${statusClass}">
+        <div class="match-header">
+          <span class="match-id">${escapeHtml(match.matchId)}</span>
+          <div class="match-info">
+            <span>${formatTime(match.startTime)}</span>
+            <span>コート${escapeHtml(match.court)}</span>
+            <span>${escapeHtml(match.stage)}</span>
+          </div>
+        </div>
+        <div class="match-teams">
+          <div>
+            <div class="team-name">${escapeHtml(teamAName)}</div>
+            <div class="match-score">
+              ${formatScore(match.scoreA_S1)} - ${formatScore(match.scoreB_S1)} / 
+              ${formatScore(match.scoreA_S2)} - ${formatScore(match.scoreB_S2)}
+              ${match.scoreA_S3 ? ' / ' + formatScore(match.scoreA_S3) + ' - ' + formatScore(match.scoreB_S3) : ''}
+            </div>
+          </div>
+          <div class="match-vs">vs</div>
+          <div>
+            <div class="team-name">${escapeHtml(teamBName)}</div>
+          </div>
+        </div>
+        <div>
+          <small>審判: ${escapeHtml(refereeName)}</small>
+        </div>
+        <div>${getStatusBadge(match.status)}</div>
+        <div class="match-actions">
+          <button onclick="openScoreInput('${escapeHtml(match.matchId)}')" class="btn btn-small btn-primary">スコア入力</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+/**
+ * スケジュール自動生成モーダル表示
+ */
+function showGenerateScheduleModal() {
+  const modal = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">スケジュール自動生成</h3>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>予選リーグの試合ス<span class="cursor">█</span>

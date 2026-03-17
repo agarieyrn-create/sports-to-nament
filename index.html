@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Pro</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+    .buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 40px;
+    }
+    .btn {
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      text-decoration: none;
+      display: inline-block;
+      font-weight: bold;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .btn-primary {
+      background: white;
+      color: #667eea;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 2px solid white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏆 Tournament Pro</h1>
+    <p>スポーツ大会管理システム</p>
+    
+    <div class="buttons">
+      <button class="btn btn-primary" onclick="goToPage('setup')">初期設定</button>
+      <button class="btn btn-secondary" onclick="goToPage('admin')">管理画面</button>
+      <button class="btn btn-secondary" onclick="goToPage('public')">観客画面</button>
+    </div>
+  </div>
+  
+  <script>
+    function goToPage(page) {
+      console.log('ページ遷移:', page);
+      
+      // 親フレームとiframeの両方で試行
+      var url = 'https://script.google.com/macros/s/AKfycbw13mhYCidwyvqC4AKGJ_N-R8ZFt5RZByjQQVdf6sjSgaQnNVhTvUQL3QAfqHfWATgS/exec?page=' + page;
+      
+      console.log('遷移先URL:', url);
+      
+      // トップレベルで開く
+      if (window.top) {
+        window.top.location.href = url;
+      } else {
+        window.location.href = url;
+      }
+    }
+    
+    console.log('Tournament Pro 初期化完了');
+    console.log('現在のURL:', window.location.href);
+  </script>
+</body>
+</html>

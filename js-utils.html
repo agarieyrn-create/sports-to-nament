@@ -1,0 +1,350 @@
+<script>
+/**
+ * Tournament Pro - ユーティリティ関数
+ */
+
+/**
+ * 要素の表示/非表示を切り替え
+ */
+function toggleElement(elementId, show) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.style.display = show ? '' : 'none';
+  }
+}
+
+/**
+ * 要素にクラスを追加
+ */
+function addClass(element, className) {
+  if (element && !element.classList.contains(className)) {
+    element.classList.add(className);
+  }
+}
+
+/**
+ * 要素からクラスを削除
+ */
+function removeClass(element, className) {
+  if (element && element.classList.contains(className)) {
+    element.classList.remove(className);
+  }
+}
+
+/**
+ * HTMLエスケープ
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * 通知表示
+ */
+function showNotification(message, type = 'info') {
+  const colors = {
+    success: '#10b981',
+    error: '#ef4444',
+    warning: '#f59e0b',
+    info: '#3b82f6'
+  };
+  
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${colors[type] || colors.info};
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+  `;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
+/**
+ * 確認ダイアログ
+ */
+function confirmDialog(message, callback) {
+  if (confirm(message)) {
+    callback();
+  }
+}
+
+/**
+ * ローディング表示
+ */
+function showLoading(show = true) {
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.style.display = show ? 'flex' : 'none';
+  }
+}
+
+/**
+ * エラー表示
+ */
+function showError(message) {
+  showNotification(message, 'error');
+  errorLog('エラー表示', message);
+}
+
+/**
+ * 成功表示
+ */
+function showSuccess(message) {
+  showNotification(message, 'success');
+  debugLog('成功表示', message);
+}
+
+/**
+ * 配列をシャッフル
+ */
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * 配列を指定数のグループに分割
+ */
+function divideIntoGroups(array, groupCount) {
+  const groups = Array.from({ length: groupCount }, () => []);
+  array.forEach((item, index) => {
+    groups[index % groupCount].push(item);
+  });
+  return groups;
+}
+
+/**
+ * オブジェクトのディープコピー
+ */
+function deepCopy(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/**
+ * 空文字チェック
+ */
+function isEmpty(value) {
+  return value === null || value === undefined || value === '';
+}
+
+/**
+ * 時間を分に変換
+ */
+function timeToMinutes(time) {
+  if (!time) return 0;
+  const parts = time.split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+}
+
+/**
+ * 分を時間に変換
+ */
+function minutesToTime(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+/**
+ * 時間に分を加算
+ */
+function addMinutesToTime(time, minutes) {
+  const totalMinutes = timeToMinutes(time) + minutes;
+  return minutesToTime(totalMinutes);
+}
+
+/**
+ * セットスコアから勝者を判定
+ */
+function determineWinner(scoreA_S1, scoreB_S1, scoreA_S2, scoreB_S2, scoreA_S3, scoreB_S3) {
+  let setsA = 0;
+  let setsB = 0;
+  
+  if (scoreA_S1 > scoreB_S1) setsA++; else setsB++;
+  if (scoreA_S2 > scoreB_S2) setsA++; else setsB++;
+  if (scoreA_S3 && scoreB_S3) {
+    if (scoreA_S3 > scoreB_S3) setsA++; else setsB++;
+  }
+  
+  if (setsA > setsB) return 'A';
+  if (setsB > setsA) return 'B';
+  return null;
+}
+
+/**
+ * チーム名をIDから取得
+ */
+function getTeamNameById(teamId) {
+  if (!teamId) return '';
+  const team = globalData.teams.find(t => t.id == teamId);
+  return team ? team.name : `チーム${teamId}`;
+}
+
+/**
+ * 試合IDを生成
+ */
+function generateMatchId(stage, number) {
+  const prefix = stage === CONFIG.MATCH_STAGES.LEAGUE ? 'L' : 'T';
+  return `${prefix}-${number}`;
+}
+
+/**
+ * スコア表示用フォーマット
+ */
+function formatScore(score) {
+  if (score === null || score === undefined || score === '') return '-';
+  return score;
+}
+
+/**
+ * 状態バッジのHTMLを生成
+ */
+function getStatusBadge(status) {
+  const badges = {
+    '未開始': '<span class="badge badge-info">未開始</span>',
+    '進行中': '<span class="badge badge-danger">進行中</span>',
+    '完了': '<span class="badge badge-success">完了</span>',
+    '済': '<span class="badge badge-success">済</span>'
+  };
+  return badges[status] || `<span class="badge">${escapeHtml(status)}</span>`;
+}
+
+/**
+ * QRコード生成（外部ライブラリ使用）
+ */
+function generateQRCode(text, elementId) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  element.innerHTML = '';
+  
+  // QRCode.jsライブラリを使用（CDNから読み込む想定）
+  try {
+    new QRCode(element, {
+      text: text,
+      width: 256,
+      height: 256,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch (error) {
+    element.innerHTML = '<p style="color: red;">QRコード生成エラー</p>';
+    errorLog('QRコード生成エラー', error);
+  }
+}
+
+/**
+ * テーブルをCSVに変換
+ */
+function tableToCSV(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return '';
+  
+  const rows = table.querySelectorAll('tr');
+  const csv = [];
+  
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('td, th');
+    const rowData = Array.from(cols).map(col => {
+      let text = col.textContent.trim();
+      // カンマやダブルクォートをエスケープ
+      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+        text = '"' + text.replace(/"/g, '""') + '"';
+      }
+      return text;
+    });
+    csv.push(rowData.join(','));
+  });
+  
+  return csv.join('\n');
+}
+
+/**
+ * CSVダウンロード
+ */
+function downloadCSV(csv, filename) {
+  const bom = '\uFEFF'; // UTF-8 BOM
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
+ * 印刷実行
+ */
+function printElement(elementId) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  const printWindow = window.open('', '', 'width=800,height=600');
+  printWindow.document.write('<html><head><title>印刷</title>');
+  printWindow.document.write('<style>');
+  printWindow.document.write(document.querySelector('style').textContent);
+  printWindow.document.write('</style></head><body>');
+  printWindow.document.write(element.innerHTML);
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+}
+
+/**
+ * アニメーション用のCSS追加
+ */
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+`;
+document.head.appendChild(style);
+</script>

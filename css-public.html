@@ -1,0 +1,606 @@
+<style>
+/* Tournament Pro - 観客向け画面スタイル */
+
+/* ヘッダー */
+.public-header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: white;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-icon {
+  font-size: 3rem;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.tournament-name {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.tournament-info {
+  margin: 0.5rem 0 0;
+  opacity: 0.95;
+  font-size: 1rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.current-time {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-refresh {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-refresh:hover {
+  background: white;
+  color: var(--color-primary);
+}
+
+.btn-refresh.disabled {
+  opacity: 0.5;
+}
+
+/* ナビゲーション */
+.public-nav {
+  background: white;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-bottom: 3px solid transparent;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.nav-tab:hover {
+  background: var(--color-background);
+  border-bottom-color: var(--color-primary);
+}
+
+.nav-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* メインコンテンツ */
+.public-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.view-content {
+  display: none;
+}
+
+.view-content.active {
+  display: block;
+}
+
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* LIVE表示 */
+.live-section {
+  margin-bottom: 3rem;
+}
+
+.live-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: var(--color-danger);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.live-matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 2rem;
+}
+
+.live-match-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  border-left: 6px solid var(--color-danger);
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.live-match-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.live-badge {
+  background: var(--color-danger);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.court-label {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.live-teams {
+  margin-bottom: 1.5rem;
+}
+
+.live-team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.live-team-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.live-score {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  color: var(--color-primary);
+}
+
+.live-set-scores {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius);
+}
+
+.set-score {
+  text-align: center;
+}
+
+.set-label {
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+  margin-bottom: 0.25rem;
+}
+
+.set-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+}
+
+/* 次の試合・最近の試合 */
+.next-section,
+.recent-section {
+  margin-bottom: 3rem;
+}
+
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.match-card-public {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+}
+
+.match-card-public:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.match-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.match-teams-public {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.team-name-public {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.vs-text {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+}
+
+.matches-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.match-item-public {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.match-result {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  color: var(--color-text);
+}
+
+/* スケジュール */
+.filter-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.filter-tab {
+  background: white;
+  border: 2px solid var(--color-border);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.filter-tab:hover {
+  border-color: var(--color-primary);
+}
+
+.filter-tab.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+#schedule-container {
+  display: grid;
+  gap: 1rem;
+}
+
+/* 順位表 */
+.standings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.standings-group {
+  background: white;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.group-header {
+  background: var(--color-primary);
+  color: white;
+  padding: 1rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.standings-table th,
+.standings-table td {
+  padding: 1rem;
+  text-align: center;
+}
+
+.standings-table th {
+  background: var(--color-background);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+}
+
+.standings-table td {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.standings-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rank-cell {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.team-cell {
+  text-align: left;
+  font-weight: 600;
+}
+
+.qualified {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* トーナメント */
+#tournament-container {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+/* 大会情報 */
+.info-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.info-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--color-text);
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table th,
+.info-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info-table th {
+  font-weight: 600;
+  color: var(--color-text-light);
+  width: 30%;
+}
+
+.info-table tr:last-child th,
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.progress-stat {
+  text-align: center;
+}
+
+.progress-label {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  margin-bottom: 0.5rem;
+}
+
+.progress-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+.progress-bar-container {
+  background: var(--color-border);
+  height: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  background: var(--color-primary);
+  height: 100%;
+  transition: width 1s ease;
+}
+
+.progress-percentage {
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-text-light);
+}
+
+.info-rules {
+  line-height: 1.8;
+}
+
+.info-rules p {
+  margin-bottom: 0.5rem;
+}
+
+/* データなし表示 */
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: var(--color-text-light);
+  background: white;
+  border-radius: var(--radius-md);
+}
+
+.no-data p {
+  font-size: 1.1rem;
+}
+
+/* フッター */
+.public-footer {
+  background: #1e293b;
+  color: white;
+  padding: 2rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+.public-footer p {
+  margin: 0.5rem 0;
+  opacity: 0.8;
+}
+
+.last-updated {
+  font-size: 0.875rem;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .public-header {
+    padding: 1.5rem 1rem;
+  }
+  
+  .tournament-name {
+    font-size: 1.5rem;
+  }
+  
+  .header-icon {
+    font-size: 2rem;
+  }
+  
+  .current-time {
+    font-size: 1.5rem;
+  }
+  
+  .public-main {
+    padding: 1rem;
+  }
+  
+  .live-matches-grid,
+  .matches-grid,
+  .standings-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .progress-stats {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .nav-tab {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+}
+</style>
