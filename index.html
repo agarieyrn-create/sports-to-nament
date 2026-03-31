@@ -1,86 +1,507 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tournament Pro</title>
+  <title>Tournament Pro - スポーツ大会管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
+    *, *::before, *::after {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .container {
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #f97316;
+      --accent: #10b981;
+      --bg: #f0f4ff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --white: #ffffff;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.14);
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%);
+      color: white;
+      padding: 3rem 1.5rem 5rem;
       text-align: center;
-      padding: 40px;
+      position: relative;
+      overflow: hidden;
     }
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 20px;
+
+    /* 背景の装飾円 */
+    .hero::before,
+    .hero::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.08;
+      background: white;
     }
-    .buttons {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin-top: 40px;
+    .hero::before {
+      width: 400px; height: 400px;
+      top: -120px; right: -80px;
     }
-    .btn {
-      padding: 15px 40px;
-      font-size: 1.2rem;
+    .hero::after {
+      width: 300px; height: 300px;
+      bottom: -100px; left: -60px;
+    }
+
+    .hero-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    }
+
+    .hero-title {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.05rem;
+      opacity: 0.85;
+      margin-bottom: 1.5rem;
+      font-weight: 400;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 0.4rem 1rem;
       border-radius: 50px;
-      text-decoration: none;
-      display: inline-block;
-      font-weight: bold;
+      font-size: 0.85rem;
+      font-weight: 500;
+      backdrop-filter: blur(4px);
+    }
+
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+      animation: blink 1.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ===== CARDS SECTION ===== */
+    .cards-section {
+      max-width: 900px;
+      margin: -2.5rem auto 0;
+      padding: 0 1.5rem 3rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ===== NAV CARD ===== */
+    .nav-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.75rem 1.5rem;
       cursor: pointer;
       border: 2px solid transparent;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      display: block;
     }
-    .btn-primary {
-      background: white;
-      color: #667eea;
+
+    .nav-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 0 0 var(--radius) var(--radius);
+      background: var(--card-color, var(--primary));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.25s ease;
     }
-    .btn-secondary {
-      background: rgba(255,255,255,0.2);
+
+    .nav-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--card-color, var(--primary));
+    }
+
+    .nav-card:hover::after {
+      transform: scaleX(1);
+    }
+
+    .nav-card:active {
+      transform: translateY(-1px);
+    }
+
+    /* カード別カラー */
+    .card-setup   { --card-color: var(--primary); }
+    .card-admin   { --card-color: var(--secondary); }
+    .card-public  { --card-color: var(--accent); }
+
+    .card-icon-wrap {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+      background: color-mix(in srgb, var(--card-color, var(--primary)) 12%, transparent);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 50px;
+      font-weight: 600;
+      background: color-mix(in srgb, var(--card-color, var(--primary)) 10%, transparent);
+      color: var(--card-color, var(--primary));
+    }
+
+    .card-arrow {
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+      font-size: 1.1rem;
+      color: var(--border);
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-card:hover .card-arrow {
+      color: var(--card-color, var(--primary));
+      transform: translateX(3px);
+    }
+
+    /* ===== FEATURES ===== */
+    .features-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .feature-item {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+    }
+
+    .feature-emoji {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .feature-text strong {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .feature-text span {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      color: var(--text-light);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ===== LOADING OVERLAY ===== */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 58, 138, 0.6);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      backdrop-filter: blur(3px);
       color: white;
-      border: 2px solid white;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .hero {
+        padding: 2.5rem 1rem 4.5rem;
+      }
+
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .cards-section {
+        padding: 0 1rem 2rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-card {
+        padding: 1.4rem 1.25rem;
+      }
+
+      .features-section {
+        padding: 0 1rem 3rem;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🏆 Tournament Pro</h1>
-    <p>スポーツ大会管理システム</p>
-    
-    <div class="buttons">
-      <button class="btn btn-primary" onclick="goToPage('setup')">初期設定</button>
-      <button class="btn btn-secondary" onclick="goToPage('admin')">管理画面</button>
-      <button class="btn btn-secondary" onclick="goToPage('public')">観客画面</button>
+
+  <!-- ヒーローセクション -->
+  <header class="hero">
+    <span class="hero-icon">🏆</span>
+    <h1 class="hero-title">Tournament Pro</h1>
+    <p class="hero-subtitle">バレーボール大会をスマートに管理</p>
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      システム稼働中
     </div>
+  </header>
+
+  <!-- メインナビゲーションカード -->
+  <main>
+    <section class="cards-section">
+      <div class="cards-grid">
+
+        <!-- 初期設定 -->
+        <button class="nav-card card-setup" onclick="goToPage('setup')">
+          <span class="card-arrow">→</span>
+          <div class="card-icon-wrap">⚙️</div>
+          <div class="card-title">初期設定</div>
+          <p class="card-desc">大会情報の登録、チーム編成、スケジュール生成などの初期セットアップを行います。</p>
+          <div class="card-tags">
+            <span class="tag">大会登録</span>
+            <span class="tag">チーム管理</span>
+            <span class="tag">日程生成</span>
+          </div>
+        </button>
+
+        <!-- 管理画面 -->
+        <button class="nav-card card-admin" onclick="goToPage('admin')">
+          <span class="card-arrow">→</span>
+          <div class="card-icon-wrap">📋</div>
+          <div class="card-title">管理画面</div>
+          <p class="card-desc">試合のスコア入力、進行管理、順位計算、タスク確認など運営に必要な機能が集まっています。</p>
+          <div class="card-tags">
+            <span class="tag">スコア入力</span>
+            <span class="tag">順位表</span>
+            <span class="tag">タスク管理</span>
+          </div>
+        </button>
+
+        <!-- 観客画面 -->
+        <button class="nav-card card-public" onclick="goToPage('public')">
+          <span class="card-arrow">→</span>
+          <div class="card-icon-wrap">📺</div>
+          <div class="card-title">観客画面</div>
+          <p class="card-desc">進行中の試合スコア、順位表、スケジュールをリアルタイムで表示します。スクリーンや個人端末で共有可能。</p>
+          <div class="card-tags">
+            <span class="tag">リアルタイム</span>
+            <span class="tag">順位表</span>
+            <span class="tag">スケジュール</span>
+          </div>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- 機能ハイライト -->
+    <section class="features-section">
+      <p class="section-label">Features</p>
+      <h2 class="section-title">主な機能</h2>
+      <div class="features-grid">
+        <div class="feature-item">
+          <span class="feature-emoji">⚡</span>
+          <div class="feature-text">
+            <strong>スコア入力</strong>
+            <span>タッチ対応の +/− ボタンで素早く入力</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-emoji">🏅</span>
+          <div class="feature-text">
+            <strong>自動順位計算</strong>
+            <span>セット率・得失点差まで自動集計</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-emoji">📅</span>
+          <div class="feature-text">
+            <strong>日程自動生成</strong>
+            <span>コート数・試合数から最適なスケジュールを生成</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-emoji">🔴</span>
+          <div class="feature-text">
+            <strong>LIVE 表示</strong>
+            <span>進行中試合をリアルタイムで観客に配信</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-emoji">🏆</span>
+          <div class="feature-text">
+            <strong>トーナメント対応</strong>
+            <span>予選リーグからトーナメントへ自動移行</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-emoji">📱</span>
+          <div class="feature-text">
+            <strong>スマホ対応</strong>
+            <span>コートサイドでもスマホで快適に操作</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Tournament Pro &copy; 2025 &nbsp;—&nbsp; Google Apps Script で動作</p>
+  </footer>
+
+  <!-- ローディングオーバーレイ -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <span>ページを読み込み中...</span>
   </div>
-  
+
   <script>
     function goToPage(page) {
-      console.log('ページ遷移:', page);
-      
-      // 親フレームとiframeの両方で試行
+      // ローディング表示
+      document.getElementById('loading-overlay').classList.add('show');
+
       var url = 'https://script.google.com/macros/s/AKfycbw13mhYCidwyvqC4AKGJ_N-R8ZFt5RZByjQQVdf6sjSgaQnNVhTvUQL3QAfqHfWATgS/exec?page=' + page;
-      
-      console.log('遷移先URL:', url);
-      
-      // トップレベルで開く
+
       if (window.top) {
         window.top.location.href = url;
       } else {
         window.location.href = url;
       }
     }
-    
-    console.log('Tournament Pro 初期化完了');
-    console.log('現在のURL:', window.location.href);
   </script>
 </body>
 </html>
