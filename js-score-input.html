@@ -1,135 +1,283 @@
 <script>
 /**
- * Tournament Pro - スコア入力機能
+ * Tournament Pro - スコア入力機能（リデザイン版）
+ *
+ * 改善点:
+ * - スコアボード型レイアウト（横並び）
+ * - タッチ操作向け大型 +/- ボタン
+ * - セットごとの勝者をリアルタイムにハイライト
+ * - セット獲得数をひと目で把握
+ * - ステータス自動判定
  */
 
 let currentMatchForScore = null;
+
+/**
+ * スコアカウンター増減
+ */
+function changeScore(setNum, team, delta) {
+  const inputId = `score${team}-S${setNum}`;
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  let val = parseInt(input.value) || 0;
+  val = Math.max(0, Math.min(50, val + delta));
+  input.value = val;
+  updateScoreDisplay(setNum);
+}
+
+/**
+ * セットスコア変化時にUIを更新
+ */
+function updateScoreDisplay(setNum) {
+  const aInput = document.getElementById(`scoreA-S${setNum}`);
+  const bInput = document.getElementById(`scoreB-S${setNum}`);
+  if (!aInput || !bInput) return;
+
+  const aScore = parseInt(aInput.value) || 0;
+  const bScore = parseInt(bInput.value) || 0;
+
+  // 各チームのスコア表示を更新
+  const aDisplay = document.getElementById(`display-A-S${setNum}`);
+  const bDisplay = document.getElementById(`display-B-S${setNum}`);
+  if (aDisplay) aDisplay.textContent = aScore;
+  if (bDisplay) bDisplay.textContent = bScore;
+
+  // セット勝者ハイライト
+  const rowEl = document.getElementById(`set-row-${setNum}`);
+  if (rowEl) {
+    rowEl.classList.remove('set-winner-a', 'set-winner-b', 'set-draw');
+    if (aScore > bScore) {
+      rowEl.classList.add('set-winner-a');
+    } else if (bScore > aScore) {
+      rowEl.classList.add('set-winner-b');
+    } else if (aScore > 0 || bScore > 0) {
+      rowEl.classList.add('set-draw');
+    }
+  }
+
+  // セット総獲得数を更新
+  updateSetWins();
+  // ステータスを自動更新
+  autoUpdateStatus();
+}
+
+/**
+ * セット獲得数を計算・表示
+ */
+function updateSetWins() {
+  let aWins = 0;
+  let bWins = 0;
+
+  for (let s = 1; s <= 3; s++) {
+    const aInput = document.getElementById(`scoreA-S${s}`);
+    const bInput = document.getElementById(`scoreB-S${s}`);
+    if (!aInput || !bInput) continue;
+    const aScore = parseInt(aInput.value) || 0;
+    const bScore = parseInt(bInput.value) || 0;
+    if (aScore === 0 && bScore === 0) continue;
+    if (aScore > bScore) aWins++;
+    else if (bScore > aScore) bWins++;
+  }
+
+  const aWinEl = document.getElementById('set-wins-a');
+  const bWinEl = document.getElementById('set-wins-b');
+  if (aWinEl) {
+    aWinEl.textContent = aWins;
+    aWinEl.className = 'set-wins-badge' + (aWins > bWins ? ' wins-leader' : '');
+  }
+  if (bWinEl) {
+    bWinEl.textContent = bWins;
+    bWinEl.className = 'set-wins-badge' + (bWins > aWins ? ' wins-leader' : '');
+  }
+}
+
+/**
+ * ステータスを自動判定
+ */
+function autoUpdateStatus() {
+  let hasScore = false;
+  let aTotal = 0, bTotal = 0;
+
+  for (let s = 1; s <= 3; s++) {
+    const aInput = document.getElementById(`scoreA-S${s}`);
+    const bInput = document.getElementById(`scoreB-S${s}`);
+    if (!aInput || !bInput) continue;
+    const aScore = parseInt(aInput.value) || 0;
+    const bScore = parseInt(bInput.value) || 0;
+    if (aScore > 0 || bScore > 0) {
+      hasScore = true;
+      if (aScore > bScore) aTotal++;
+      else if (bScore > aScore) bTotal++;
+    }
+  }
+
+  const statusSelect = document.getElementById('match-status');
+  if (!statusSelect) return;
+
+  if (!hasScore) {
+    // スコアがなければ未開始
+    if (statusSelect.value !== '完了') statusSelect.value = '未開始';
+  } else if (aTotal >= 2 || bTotal >= 2) {
+    // どちらかが2セット取ったら完了
+    statusSelect.value = '完了';
+  } else {
+    // スコアはあるが決着なし
+    if (statusSelect.value === '未開始') statusSelect.value = '進行中';
+  }
+}
 
 /**
  * スコア入力画面を開く
  */
 function openScoreInput(matchId) {
   debugLog('スコア入力を開く:', matchId);
-  
+
   const match = globalData.matches.find(m => m.matchId === matchId);
   if (!match) {
     showError('試合が見つかりません');
     return;
   }
-  
+
   currentMatchForScore = match;
-  
+
   const teamA = getTeamNameById(match.teamA);
   const teamB = getTeamNameById(match.teamB);
-  
+
+  const aS1 = match.scoreA_S1 || 0;
+  const bS1 = match.scoreB_S1 || 0;
+  const aS2 = match.scoreA_S2 || 0;
+  const bS2 = match.scoreB_S2 || 0;
+  const aS3 = match.scoreA_S3 || 0;
+  const bS3 = match.scoreB_S3 || 0;
+
+  const setWinA = [aS1 > bS1, aS2 > bS2, aS3 > bS3].filter(Boolean).length;
+  const setWinB = [bS1 > aS1, bS2 > aS2, bS3 > aS3].filter(Boolean).length;
+
+  function setRowClass(a, b, both) {
+    if (a === 0 && b === 0) return '';
+    if (a > b) return 'set-winner-a';
+    if (b > a) return 'set-winner-b';
+    return 'set-draw';
+  }
+
   const modal = `
     <div class="modal-overlay" onclick="closeModal(event)">
-      <div class="modal" onclick="event.stopPropagation()" style="max-width: 600px;">
-        <div class="modal-header">
-          <h3 class="modal-title">スコア入力 - ${escapeHtml(matchId)}</h3>
+      <div class="modal score-input-modal" onclick="event.stopPropagation()">
+        <div class="modal-header score-modal-header">
+          <div class="score-modal-match-info">
+            <span class="score-modal-match-id">試合 ${escapeHtml(matchId)}</span>
+            <span class="score-modal-meta">コート${escapeHtml(String(match.court || '?'))} | ${formatTime(match.startTime)}</span>
+          </div>
           <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
-        <div class="modal-body">
-          <div style="margin-bottom: 2rem;">
-            <h4>${escapeHtml(teamA)} vs ${escapeHtml(teamB)}</h4>
-            <p>コート${escapeHtml(match.court)} | ${formatTime(match.startTime)}</p>
-          </div>
-          
-          <div class="score-input-grid">
-            <div class="score-team">
-              <h5>${escapeHtml(teamA)}</h5>
-              <div class="score-sets">
-                <div class="score-set">
-                  <label>第1セット</label>
-                  <input type="number" id="scoreA-S1" class="form-control" min="0" max="50" value="${match.scoreA_S1 || 0}">
-                </div>
-                <div class="score-set">
-                  <label>第2セット</label>
-                  <input type="number" id="scoreA-S2" class="form-control" min="0" max="50" value="${match.scoreA_S2 || 0}">
-                </div>
-                <div class="score-set">
-                  <label>第3セット</label>
-                  <input type="number" id="scoreA-S3" class="form-control" min="0" max="50" value="${match.scoreA_S3 || ''}">
-                </div>
-              </div>
+
+        <div class="modal-body score-modal-body">
+
+          <!-- チーム名ヘッダー -->
+          <div class="scoreboard-header">
+            <div class="scoreboard-team-label team-label-a">
+              <span class="team-label-name">${escapeHtml(teamA)}</span>
+              <div id="set-wins-a" class="set-wins-badge ${setWinA > setWinB ? 'wins-leader' : ''}">${setWinA}</div>
             </div>
-            
-            <div class="score-team">
-              <h5>${escapeHtml(teamB)}</h5>
-              <div class="score-sets">
-                <div class="score-set">
-                  <label>第1セット</label>
-                  <input type="number" id="scoreB-S1" class="form-control" min="0" max="50" value="${match.scoreB_S1 || 0}">
-                </div>
-                <div class="score-set">
-                  <label>第2セット</label>
-                  <input type="number" id="scoreB-S2" class="form-control" min="0" max="50" value="${match.scoreB_S2 || 0}">
-                </div>
-                <div class="score-set">
-                  <label>第3セット</label>
-                  <input type="number" id="scoreB-S3" class="form-control" min="0" max="50" value="${match.scoreB_S3 || ''}">
-                </div>
-              </div>
+            <div class="scoreboard-vs">セット</div>
+            <div class="scoreboard-team-label team-label-b">
+              <div id="set-wins-b" class="set-wins-badge ${setWinB > setWinA ? 'wins-leader' : ''}">${setWinB}</div>
+              <span class="team-label-name">${escapeHtml(teamB)}</span>
             </div>
           </div>
-          
-          <div class="form-group" style="margin-top: 2rem;">
-            <label class="form-label">試合状態</label>
-            <select id="match-status" class="form-control">
+
+          <!-- セットスコア入力 -->
+          <div class="set-rows">
+
+            ${buildSetRow(1, teamA, teamB, aS1, bS1, setRowClass(aS1, bS1))}
+            ${buildSetRow(2, teamA, teamB, aS2, bS2, setRowClass(aS2, bS2))}
+            ${buildSetRow(3, teamA, teamB, aS3, bS3, setRowClass(aS3, bS3))}
+
+          </div>
+
+          <!-- ステータス -->
+          <div class="score-status-row">
+            <label class="score-status-label">試合ステータス</label>
+            <div class="score-status-buttons">
+              <button type="button" class="status-btn ${match.status === '未開始' ? 'active' : ''}"
+                onclick="setMatchStatus('未開始')">⏳ 未開始</button>
+              <button type="button" class="status-btn ${match.status === '進行中' ? 'active' : ''}"
+                onclick="setMatchStatus('進行中')">🔴 進行中</button>
+              <button type="button" class="status-btn ${match.status === '完了' ? 'active' : ''}"
+                onclick="setMatchStatus('完了')">✅ 完了</button>
+            </div>
+            <select id="match-status" class="hidden">
               <option value="未開始" ${match.status === '未開始' ? 'selected' : ''}>未開始</option>
               <option value="進行中" ${match.status === '進行中' ? 'selected' : ''}>進行中</option>
               <option value="完了" ${match.status === '完了' ? 'selected' : ''}>完了</option>
             </select>
           </div>
+
         </div>
-        <div class="modal-footer">
-          <button onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
-          <button onclick="submitScore()" class="btn btn-primary">保存</button>
+
+        <div class="modal-footer score-modal-footer">
+          <button onclick="closeModal()" class="btn btn-outline">キャンセル</button>
+          <button onclick="submitScore()" class="btn btn-primary btn-save-score">💾 保存する</button>
         </div>
       </div>
     </div>
   `;
-  
+
   document.getElementById('modal-container').innerHTML = modal;
-  
-  // CSSを追加
-  const style = document.createElement('style');
-  style.textContent = `
-    .score-input-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-    }
-    .score-team h5 {
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    .score-sets {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .score-set {
-      display: flex;
-      flex-direction: column;
-    }
-    .score-set label {
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
-    }
-    .score-set input {
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    @media (max-width: 600px) {
-      .score-input-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-    }
+  injectScoreInputStyles();
+}
+
+/**
+ * セット行HTMLを生成
+ */
+function buildSetRow(setNum, teamA, teamB, aScore, bScore, extraClass) {
+  const label = setNum === 3 ? '第3セット<br><small>15点制</small>' : `第${setNum}セット`;
+  return `
+    <div id="set-row-${setNum}" class="set-row ${extraClass}">
+      <!-- Team A side -->
+      <div class="score-side score-side-a">
+        <button type="button" class="score-btn score-btn-minus"
+          onclick="changeScore(${setNum},'A',-1)" aria-label="${teamA}のスコアを1点減らす">−</button>
+        <span id="display-A-S${setNum}" class="score-display">${aScore}</span>
+        <button type="button" class="score-btn score-btn-plus"
+          onclick="changeScore(${setNum},'A',1)" aria-label="${teamA}のスコアを1点増やす">＋</button>
+        <input type="number" id="scoreA-S${setNum}" class="hidden" min="0" max="50" value="${aScore}"
+          oninput="updateScoreDisplay(${setNum})">
+      </div>
+
+      <!-- Set label -->
+      <div class="set-label-col">
+        <span class="set-label-text">${label}</span>
+        <span class="set-winner-icon" id="set-icon-${setNum}"></span>
+      </div>
+
+      <!-- Team B side -->
+      <div class="score-side score-side-b">
+        <button type="button" class="score-btn score-btn-minus"
+          onclick="changeScore(${setNum},'B',-1)" aria-label="${teamB}のスコアを1点減らす">−</button>
+        <span id="display-B-S${setNum}" class="score-display">${bScore}</span>
+        <button type="button" class="score-btn score-btn-plus"
+          onclick="changeScore(${setNum},'B',1)" aria-label="${teamB}のスコアを1点増やす">＋</button>
+        <input type="number" id="scoreB-S${setNum}" class="hidden" min="0" max="50" value="${bScore}"
+          oninput="updateScoreDisplay(${setNum})">
+      </div>
+    </div>
   `;
-  document.head.appendChild(style);
+}
+
+/**
+ * ステータスボタン切り替え
+ */
+function setMatchStatus(status) {
+  const select = document.getElementById('match-status');
+  if (select) select.value = status;
+
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.includes(
+      status === '未開始' ? '未開始' : status === '進行中' ? '進行中' : '完了'
+    ));
+  });
 }
 
 /**
@@ -137,7 +285,7 @@ function openScoreInput(matchId) {
  */
 function submitScore() {
   if (!currentMatchForScore) return;
-  
+
   const scores = {
     scoreA_S1: parseInt(document.getElementById('scoreA-S1').value) || 0,
     scoreB_S1: parseInt(document.getElementById('scoreB-S1').value) || 0,
@@ -147,13 +295,19 @@ function submitScore() {
     scoreB_S3: parseInt(document.getElementById('scoreB-S3').value) || null,
     status: document.getElementById('match-status').value
   };
-  
-  // 第3セットが空の場合はnullに
+
+  // 第3セットが0/0の場合はnullに
   if (!scores.scoreA_S3 && !scores.scoreB_S3) {
     scores.scoreA_S3 = null;
     scores.scoreB_S3 = null;
   }
-  
+
+  const saveBtn = document.querySelector('.btn-save-score');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
+  }
+
   showLoading(true);
   updateMatchScoreOnServer(currentMatchForScore.matchId, scores, function(success) {
     showLoading(false);
@@ -161,7 +315,353 @@ function submitScore() {
       closeModal();
       currentMatchForScore = null;
       refreshData();
+      if (typeof showToast === 'function') showToast('スコアを保存しました', 'success');
+    } else {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 保存する';
+      }
     }
   });
+}
+
+/**
+ * スコア入力用スタイルを注入
+ */
+function injectScoreInputStyles() {
+  if (document.getElementById('score-input-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'score-input-styles';
+  style.textContent = `
+    /* === スコア入力モーダル === */
+    .score-input-modal {
+      max-width: 560px;
+      width: 96%;
+    }
+
+    .score-modal-header {
+      background: linear-gradient(135deg, var(--color-primary, #2563eb), #1d4ed8);
+      color: white;
+      border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
+    }
+
+    .score-modal-header .modal-close {
+      color: rgba(255,255,255,0.8);
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .score-modal-header .modal-close:hover {
+      color: white;
+    }
+
+    .score-modal-match-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .score-modal-match-id {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .score-modal-meta {
+      font-size: 0.85rem;
+      opacity: 0.85;
+    }
+
+    .score-modal-body {
+      padding: 1.25rem;
+    }
+
+    /* チームヘッダー */
+    .scoreboard-header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--color-background, #f8fafc);
+      border-radius: var(--radius, 8px);
+    }
+
+    .scoreboard-team-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .team-label-a {
+      justify-content: flex-start;
+    }
+
+    .team-label-b {
+      justify-content: flex-end;
+    }
+
+    .team-label-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text, #1e293b);
+      line-height: 1.2;
+    }
+
+    .scoreboard-vs {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-light, #64748b);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* セット獲得数バッジ */
+    .set-wins-badge {
+      min-width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--color-border, #e2e8f0);
+      color: var(--color-text-light, #64748b);
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .set-wins-badge.wins-leader {
+      background: var(--color-primary, #2563eb);
+      color: white;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+      transform: scale(1.1);
+    }
+
+    /* セット行 */
+    .set-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .set-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-radius: var(--radius, 8px);
+      border: 2px solid var(--color-border, #e2e8f0);
+      background: white;
+      transition: all 0.25s ease;
+    }
+
+    .set-row.set-winner-a {
+      border-color: var(--color-primary, #2563eb);
+      background: rgba(37, 99, 235, 0.04);
+    }
+
+    .set-row.set-winner-b {
+      border-color: var(--color-secondary, #f97316);
+      background: rgba(249, 115, 22, 0.04);
+    }
+
+    .set-row.set-draw {
+      border-color: var(--color-warning, #f59e0b);
+      background: rgba(245, 158, 11, 0.04);
+    }
+
+    /* スコアサイド */
+    .score-side {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .score-side-a {
+      justify-content: flex-start;
+    }
+
+    .score-side-b {
+      justify-content: flex-end;
+    }
+
+    /* スコア表示 */
+    .score-display {
+      font-size: 2.25rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      min-width: 2.5rem;
+      text-align: center;
+      color: var(--color-text, #1e293b);
+      line-height: 1;
+    }
+
+    .set-winner-a .score-side-a .score-display {
+      color: var(--color-primary, #2563eb);
+    }
+
+    .set-winner-b .score-side-b .score-display {
+      color: var(--color-secondary, #f97316);
+    }
+
+    /* +/- ボタン */
+    .score-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--color-border, #e2e8f0);
+      background: white;
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      color: var(--color-text, #1e293b);
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .score-btn:active {
+      transform: scale(0.9);
+    }
+
+    .score-btn-plus {
+      border-color: var(--color-primary, #2563eb);
+      color: var(--color-primary, #2563eb);
+    }
+
+    .score-btn-plus:hover {
+      background: var(--color-primary, #2563eb);
+      color: white;
+    }
+
+    .score-btn-minus {
+      border-color: var(--color-danger, #ef4444);
+      color: var(--color-danger, #ef4444);
+    }
+
+    .score-btn-minus:hover {
+      background: var(--color-danger, #ef4444);
+      color: white;
+    }
+
+    /* セットラベル列 */
+    .set-label-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.15rem;
+      min-width: 70px;
+    }
+
+    .set-label-text {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-light, #64748b);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* ステータス行 */
+    .score-status-row {
+      border-top: 1px solid var(--color-border, #e2e8f0);
+      padding-top: 1rem;
+    }
+
+    .score-status-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text-light, #64748b);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .score-status-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .status-btn {
+      flex: 1;
+      padding: 0.65rem 0.5rem;
+      border: 2px solid var(--color-border, #e2e8f0);
+      border-radius: var(--radius, 8px);
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text-light, #64748b);
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .status-btn:hover {
+      border-color: var(--color-primary, #2563eb);
+      color: var(--color-primary, #2563eb);
+    }
+
+    .status-btn.active {
+      background: var(--color-primary, #2563eb);
+      border-color: var(--color-primary, #2563eb);
+      color: white;
+    }
+
+    .score-modal-footer {
+      padding: 1rem 1.25rem;
+    }
+
+    .btn-save-score {
+      flex: 1;
+      font-size: 1rem;
+      padding: 0.85rem;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 480px) {
+      .score-input-modal {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+
+      .modal-overlay {
+        align-items: flex-end;
+      }
+
+      .score-display {
+        font-size: 1.9rem;
+        min-width: 2.2rem;
+      }
+
+      .score-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+      }
+
+      .score-status-buttons {
+        flex-direction: column;
+      }
+
+      .team-label-name {
+        font-size: 0.875rem;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }
 </script>
